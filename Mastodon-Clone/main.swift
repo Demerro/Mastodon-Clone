@@ -6,10 +6,6 @@
 //
 
 import UIKit
+import MastodonApplicationDelegate
 
-UIApplicationMain(
-  CommandLine.argc,
-  CommandLine.unsafeArgv,
-  nil,
-  NSStringFromClass(AppDelegate.self)
-)
+UIApplicationMain(CommandLine.argc, CommandLine.unsafeArgv, nil, NSStringFromClass(ApplicationDelegate.self))

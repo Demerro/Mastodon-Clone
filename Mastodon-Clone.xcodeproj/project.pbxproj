@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		69A2781F2CF237240058CD2F /* MastodonApplicationDelegate in Frameworks */ = {isa = PBXBuildFile; productRef = 69A2781E2CF237240058CD2F /* MastodonApplicationDelegate */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		69A277EE2CF232400058CD2F /* Mastodon-Clone.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Mastodon-Clone.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -15,6 +19,15 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+			);
+			target = 69A277ED2CF232400058CD2F /* Mastodon-Clone */;
+		};
+		69A2781C2CF235980058CD2F /* Exceptions for "Packages" folder in "Mastodon-Clone" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				MastodonApplicationDelegate,
+				MastodonApplicationUI,
+				UIKitFoundation,
 			);
 			target = 69A277ED2CF232400058CD2F /* Mastodon-Clone */;
 		};
@@ -29,6 +42,14 @@
 			path = "Mastodon-Clone";
 			sourceTree = "<group>";
 		};
+		69A2781A2CF235540058CD2F /* Packages */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				69A2781C2CF235980058CD2F /* Exceptions for "Packages" folder in "Mastodon-Clone" target */,
+			);
+			path = Packages;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -36,6 +57,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				69A2781F2CF237240058CD2F /* MastodonApplicationDelegate in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -45,7 +67,9 @@
 		69A277E52CF232400058CD2F = {
 			isa = PBXGroup;
 			children = (
+				69A2781A2CF235540058CD2F /* Packages */,
 				69A277F02CF232400058CD2F /* Mastodon-Clone */,
+				69A2781D2CF237240058CD2F /* Frameworks */,
 				69A277EF2CF232400058CD2F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -56,6 +80,13 @@
 				69A277EE2CF232400058CD2F /* Mastodon-Clone.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		69A2781D2CF237240058CD2F /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -75,9 +106,11 @@
 			);
 			fileSystemSynchronizedGroups = (
 				69A277F02CF232400058CD2F /* Mastodon-Clone */,
+				69A2781A2CF235540058CD2F /* Packages */,
 			);
 			name = "Mastodon-Clone";
 			packageProductDependencies = (
+				69A2781E2CF237240058CD2F /* MastodonApplicationDelegate */,
 			);
 			productName = "Mastodon-Clone";
 			productReference = 69A277EE2CF232400058CD2F /* Mastodon-Clone.app */;
@@ -345,6 +378,13 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		69A2781E2CF237240058CD2F /* MastodonApplicationDelegate */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MastodonApplicationDelegate;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 69A277E62CF232400058CD2F /* Project object */;
 }
