@@ -27,6 +27,8 @@
 			membershipExceptions = (
 				MastodonApplicationDelegate,
 				MastodonApplicationUI,
+				Network,
+				osUtilities,
 				UIKitFoundation,
 			);
 			target = 69A277ED2CF232400058CD2F /* Mastodon-Clone */;
