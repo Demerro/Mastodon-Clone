@@ -1,0 +1,10 @@
+<html>
+    <head>
+        <title>Open URI on Button Click</title>
+    </head>
+    <script type="text/javascript">
+        function openURI() { 
+            window.open("mastodon-clone://")
+        }
+    </script>
+</html>
