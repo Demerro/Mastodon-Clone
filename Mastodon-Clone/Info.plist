@@ -14,5 +14,9 @@
 	</dict>
 	<key>UIViewEdgeAntialiasing</key>
 	<true/>
+	<key>Instances Secret</key>
+	<string>$(INSTANCES_SECRET)</string>
+	<key>Client Secret</key>
+	<string>$(CLIENT_SECRET)</string>
 </dict>
 </plist>

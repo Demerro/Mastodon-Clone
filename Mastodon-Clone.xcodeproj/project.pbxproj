@@ -27,9 +27,11 @@
 			membershipExceptions = (
 				MastodonApplicationDelegate,
 				MastodonApplicationUI,
-				Network,
-				osUtilities,
+				MastodonAuthorizationDomain,
+				MastodonAuthorizationUI,
+				SwiftUtilities,
 				UIKitFoundation,
+				UIKitUtilities,
 			);
 			target = 69A277ED2CF232400058CD2F /* Mastodon-Clone */;
 		};
@@ -241,6 +243,8 @@
 		};
 		69A278042CF232420058CD2F /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = 69A277F02CF232400058CD2F /* Mastodon-Clone */;
+			baseConfigurationReferenceRelativePath = Configuration.xcconfig;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -304,6 +308,8 @@
 		};
 		69A278052CF232420058CD2F /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = 69A277F02CF232400058CD2F /* Mastodon-Clone */;
+			baseConfigurationReferenceRelativePath = Configuration.xcconfig;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;

@@ -4,21 +4,35 @@
 import PackageDescription
 
 let package = Package(
-    name: "Network",
+    name: "MastodonAuthorizationDomain",
     platforms: [.iOS(.v15)],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
-            name: "Network",
-            targets: ["Network"]),
+            name: "AuthorizationDomain",
+            targets: ["AuthorizationDomain"]),
+        .library(
+            name: "InstancesDomain",
+            targets: ["InstancesDomain"]
+        )
     ],
-    dependencies: [.package(path: "osUtilities")],
+    dependencies: [
+        .package(path: "NetworkFoundation"),
+    ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "Network",
-            dependencies: [.byName(name: "osUtilities")]
+            name: "AuthorizationDomain",
+            dependencies: [
+                .byName(name: "NetworkFoundation"),
+            ]
         ),
+        .target(
+            name: "InstancesDomain",
+            dependencies: [
+                .byName(name: "NetworkFoundation"),
+            ]
+        )
     ]
 )

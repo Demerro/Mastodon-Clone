@@ -9,11 +9,10 @@ import UIKit
 
 open class ViewController: UIViewController, ViewControllerProtocol {
     
-    final var setupFlags = SetupFlags()
-    
     public init() {
         super.init(nibName: nil, bundle: nil)
         setupCommon()
+        setupViewConstraints()
     }
     
     @available(*, unavailable)

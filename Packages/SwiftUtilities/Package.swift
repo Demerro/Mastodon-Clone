@@ -4,23 +4,18 @@
 import PackageDescription
 
 let package = Package(
-    name: "MastodonApplicationDelegate",
-    platforms: [.iOS(.v15)],
+    name: "SwiftUtilities",
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
-            name: "MastodonApplicationDelegate",
-            targets: ["MastodonApplicationDelegate"]),
-    ],
-    dependencies: [
-        .package(path: "MastodonApplicationUI"),
+            name: "SwiftUtilities",
+            targets: ["SwiftUtilities"]),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "MastodonApplicationDelegate",
-            dependencies: [.byName(name: "MastodonApplicationUI")]
-        ),
+            name: "SwiftUtilities"),
+
     ]
 )

@@ -1,11 +1,11 @@
 //
 //  Logger+Categories.swift
-//  osUtilities
+//  Network
 //
-//  Created by Nikita Prokhorchuk on 24.11.24.
+//  Created by Nikita Prokhorchuk on 8.12.24.
 //
 
-import Foundation
+import Foundation.NSBundle
 import os.log
 
 extension Logger {

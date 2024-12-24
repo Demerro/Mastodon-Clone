@@ -7,7 +7,6 @@
 
 import Foundation
 import os.log
-import osUtilities
 
 public struct NetworkService: Sendable {
     
@@ -66,7 +65,7 @@ public struct NetworkService: Sendable {
 
 extension NetworkService {
     
-    public enum Error: LocalizedError {
+    public enum Error: Swift.Error {
         
         case clientOrTransportSpecific(URLError)
         
@@ -91,6 +90,9 @@ extension NetworkService {
     public static let api: NetworkService = {
         let config = URLSessionConfiguration.default
         config.httpAdditionalHeaders = ["Content-Type": "application/json"]
+        config.waitsForConnectivity = true
         return NetworkService(session: URLSession(configuration: config))
     }()
+    
+    public static let imageDownload = NetworkService(session: .shared)
 }
