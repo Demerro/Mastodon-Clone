@@ -23,7 +23,7 @@ struct ObtainTokenRequest {
 extension ObtainTokenRequest: RequestProtocol {
     
     func response() async throws(Error) -> ObtainTokenResponse {
-        Logger.request.info("Starting request for token")
+        Logger.authorizationDomain.info("Starting request for token")
         var urlComponents = URLComponents(string: Self.baseURLString)!
         urlComponents.queryItems = [
             URLQueryItem(name: "grant_type", value: "authorization_code"),
@@ -38,16 +38,16 @@ extension ObtainTokenRequest: RequestProtocol {
         do {
             let data = try await networkService.data(for: request)
             let obtainTokenResponse = try jsonDecoder.decode(ObtainTokenResponse.self, from: data)
-            Logger.request.info("Token request succeeded")
+            Logger.authorizationDomain.info("Token request succeeded")
             return obtainTokenResponse
         } catch let networkError as NetworkService.Error {
-            Logger.request.error("Encountered network error: \(networkError)")
+            Logger.authorizationDomain.error("Encountered network error: \(networkError)")
             throw .network(networkError)
         } catch let decodingError as DecodingError {
-            Logger.request.error("Encountered decoding error: \(decodingError)")
+            Logger.authorizationDomain.error("Encountered decoding error: \(decodingError)")
             throw .decoding(decodingError)
         } catch let error {
-            Logger.request.error("Encountered unknown error: \(error)")
+            Logger.authorizationDomain.error("Encountered unknown error: \(error)")
             throw .unknown(error)
         }
     }

@@ -21,7 +21,7 @@ struct InstancesListRequest {
 extension InstancesListRequest: RequestProtocol {
     
     func response() async throws(InstancesError) -> InstancesResponse {
-        Logger.request.debug("Starting request for instances list")
+        Logger.instancesDomain.debug("Starting request for instances list")
         var urlComponents = URLComponents(string: Self.baseURLString)!
         urlComponents.queryItems = [
             URLQueryItem(name: "count", value: "1000"),
@@ -34,16 +34,16 @@ extension InstancesListRequest: RequestProtocol {
         do {
             let data = try await networkService.data(for: request)
             let instancesListResponse = try jsonDecoder.decode(InstancesResponse.self, from: data)
-            Logger.request.debug("Request for instances list succeeded")
+            Logger.instancesDomain.debug("Request for instances list succeeded")
             return instancesListResponse
         } catch let networkError as NetworkService.Error {
-            Logger.request.error("Encountered network error: \(networkError)")
+            Logger.instancesDomain.error("Encountered network error: \(networkError)")
             throw .network(networkError)
         } catch let decodingError as DecodingError {
-            Logger.request.error("Encountered decoding error: \(decodingError)")
+            Logger.instancesDomain.error("Encountered decoding error: \(decodingError)")
             throw .decoding(decodingError)
         } catch let error {
-            Logger.request.error("Encountered unknown error: \(error)")
+            Logger.instancesDomain.error("Encountered unknown error: \(error)")
             throw .unknown(error)
         }
     }
