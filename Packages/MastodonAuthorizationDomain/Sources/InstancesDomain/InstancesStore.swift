@@ -18,7 +18,7 @@ extension InstancesStore {
     
     public func listInstances() async throws(InstancesError) {
         let response = try await InstancesListRequest(networkService: .api).response()
-        instances = response.instances.sorted { $0.postsCount > $1.postsCount }
+        instances = response.instances.sorted { $0.statusesCount > $1.statusesCount }
     }
 }
 

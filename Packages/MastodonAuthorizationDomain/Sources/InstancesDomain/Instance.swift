@@ -17,7 +17,7 @@ public struct Instance {
     
     public let usersCount: Int
     
-    public let postsCount: Int
+    public let statusesCount: Int
     
     public let thumbnailURL: URL?
     
@@ -26,14 +26,14 @@ public struct Instance {
         name: String,
         description: String?,
         usersCount: Int,
-        postsCount: Int,
+        statusesCount: Int,
         thumbnailURL: URL?
     ) {
         self.id = id
         self.name = name
         self.description = description
         self.usersCount = usersCount
-        self.postsCount = postsCount
+        self.statusesCount = statusesCount
         self.thumbnailURL = thumbnailURL
     }
     
@@ -43,7 +43,7 @@ public struct Instance {
         name = try container.decode(String.self, forKey: .name)
         description = try container.nestedContainer(keyedBy: CodingKeys.self, forKey: .info).decodeIfPresent(String.self, forKey: .shortDescription)
         usersCount = Int(try container.decode(String.self, forKey: .users)) ?? 0
-        postsCount = Int(try container.decode(String.self, forKey: .statuses)) ?? 0
+        statusesCount = Int(try container.decode(String.self, forKey: .statuses)) ?? 0
         thumbnailURL = try container.decodeIfPresent(URL.self, forKey: .thumbnail)
     }
 }

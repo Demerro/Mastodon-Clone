@@ -133,8 +133,8 @@ extension InstanceContentView {
         nameLabelBottomConstraint.isActive = configuration.description == nil
         
         if let usersCount = configuration.usersCount,
-           let postsCount = configuration.postsCount {
-            informationLabel.text = "\(usersCount.roundedWithAbbreviations) users • \(postsCount.roundedWithAbbreviations) posts"
+           let statusesCount = configuration.statusesCount {
+            informationLabel.text = "\(usersCount.roundedWithAbbreviations) users • \(statusesCount.roundedWithAbbreviations) posts"
         }
     }
 }
@@ -151,7 +151,7 @@ extension InstanceContentView {
         
         var usersCount: Int?
         
-        var postsCount: Int?
+        var statusesCount: Int?
         
         func makeContentView() -> any UIView & UIContentView {
             InstanceContentView(configuration: self)

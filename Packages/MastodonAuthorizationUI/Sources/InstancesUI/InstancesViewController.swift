@@ -83,7 +83,7 @@ extension InstancesViewController {
             configuration.name = item.name
             configuration.description = item.description
             configuration.usersCount = item.usersCount
-            configuration.postsCount = item.postsCount
+            configuration.statusesCount = item.statusesCount
             cell.contentConfiguration = configuration
             guard let url = item.thumbnailURL else { return }
             Task {
