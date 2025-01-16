@@ -11,7 +11,7 @@ import NetworkFoundation
 
 struct InstancesListRequest {
     
-    static let baseURLString = "https://instances.social/api/1.0/instances/list"
+    private static let baseURLString = "https://instances.social/api/1.0/instances/list"
     
     let jsonDecoder = JSONDecoder()
     
@@ -22,6 +22,7 @@ extension InstancesListRequest: RequestProtocol {
     
     func response() async throws(InstancesError) -> InstancesResponse {
         Logger.instancesDomain.debug("Starting request for instances list")
+        
         var urlComponents = URLComponents(string: Self.baseURLString)!
         urlComponents.queryItems = [
             URLQueryItem(name: "count", value: "1000"),
@@ -29,8 +30,10 @@ extension InstancesListRequest: RequestProtocol {
             URLQueryItem(name: "include_closed", value: "false"),
             URLQueryItem(name: "min_active_users", value: "500"),
         ]
+        
         var request = URLRequest(url: urlComponents.url!)
         request.addValue("Bearer \(Constants.instancesSecret)", forHTTPHeaderField: "Authorization")
+        
         do {
             let data = try await networkService.data(for: request)
             let instancesListResponse = try jsonDecoder.decode(InstancesResponse.self, from: data)

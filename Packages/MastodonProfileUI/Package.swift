@@ -4,30 +4,32 @@
 import PackageDescription
 
 let package = Package(
-    name: "MastodonApplicationUI",
+    name: "MastodonProfileUI",
     platforms: [.iOS(.v15)],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
-            name: "MastodonApplicationUI",
-            targets: ["MastodonApplicationUI"]),
+            name: "MastodonProfileUI",
+            targets: ["MastodonProfileUI"]),
     ],
     dependencies: [
-        .package(path: "UIKitFoundation"),
-        .package(path: "MastodonAuthorizationUI"),
-        .package(path: "MastodonAuthorizationDomain"),
-        .package(path: "MastodonMainUI"),
+        .package(path: "SwiftUtilities"),
+        .package(path: "FoundationUtilities"),
+        .package(path: "NetworkFoundation"),
+        .package(path: "MastodonAccountsDomain"),
+        .package(path: "MastodonCoreUI"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "MastodonApplicationUI",
+            name: "MastodonProfileUI",
             dependencies: [
-                .byName(name: "UIKitFoundation"),
-                .product(name: "AuthorizationUI", package: "MastodonAuthorizationUI"),
-                .product(name: "AuthorizationDomain", package: "MastodonAuthorizationDomain"),
-                .byName(name: "MastodonMainUI"),
+                .byName(name: "SwiftUtilities"),
+                .byName(name: "FoundationUtilities"),
+                .byName(name: "NetworkFoundation"),
+                .byName(name: "MastodonAccountsDomain"),
+                .byName(name: "MastodonCoreUI"),
             ]
         ),
     ]

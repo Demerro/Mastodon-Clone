@@ -12,7 +12,32 @@ extension UIImage {
     public func byPreparingThumbnail(ofSize size: CGSize, with displayScale: CGFloat) async -> UIImage? {
         guard let cgImage else { return nil }
         let scaledImage = UIImage(cgImage: cgImage, scale: displayScale, orientation: .up)
-        let aspectRatio = scaledImage.size.width / scaledImage.size.height
-        return await scaledImage.byPreparingThumbnail(ofSize: CGSize(width: size.height * aspectRatio, height: size.height))
+        return await scaledImage.byPreparingThumbnail(ofSize: CGSize(width: size.width, height: size.height))
+    }
+}
+
+extension UIImage {
+    
+    public static func animatedImage(withGIFData data: Data) -> UIImage? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+        
+        let frameCount = CGImageSourceGetCount(source)
+        var frames: [UIImage] = []
+        var gifDuration = 0.0
+        
+        for i in 0..<frameCount {
+            guard let cgImage = CGImageSourceCreateImageAtIndex(source, i, nil) else { continue }
+            
+            if let properties = CGImageSourceCopyPropertiesAtIndex(source, i, nil),
+               let gifInfo = (properties as NSDictionary)[kCGImagePropertyGIFDictionary as String] as? NSDictionary,
+               let frameDuration = gifInfo[kCGImagePropertyGIFDelayTime] as? NSNumber {
+                gifDuration += frameDuration.doubleValue
+            }
+            
+            let frameImage = UIImage(cgImage: cgImage)
+            frames.append(frameImage)
+        }
+        
+        return UIImage.animatedImage(with: frames, duration: gifDuration)
     }
 }

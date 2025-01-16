@@ -11,7 +11,7 @@ import NetworkFoundation
 
 struct InstancesSearchRequest {
     
-    static let baseURLString = "https://instances.social/api/1.0/instances/search"
+    private static let baseURLString = "https://instances.social/api/1.0/instances/search"
     
     let jsonDecoder = JSONDecoder()
     
@@ -24,12 +24,15 @@ extension InstancesSearchRequest: RequestProtocol {
     
     func response() async throws(InstancesError) -> InstancesResponse {
         Logger.instancesDomain.debug("Starting request for instances search")
+        
         var urlComponents = URLComponents(string: Self.baseURLString)!
         urlComponents.queryItems = [
             URLQueryItem(name: "q", value: query)
         ]
+        
         var request = URLRequest(url: urlComponents.url!)
         request.addValue("Bearer \(Constants.instancesSecret)", forHTTPHeaderField: "Authorization")
+        
         do {
             let data = try await networkService.data(for: request)
             let instanceSearchResponse = try jsonDecoder.decode(InstancesResponse.self, from: data)

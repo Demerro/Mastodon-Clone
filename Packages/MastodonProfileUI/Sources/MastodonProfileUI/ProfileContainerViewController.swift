@@ -1,0 +1,95 @@
+//
+//  ProfileContainerViewController.swift
+//  MastodonProfileUI
+//
+//  Created by Nikita Prokhorchuk on 13.01.25.
+//
+
+import UIKit
+import UIKitFoundation
+import MastodonCoreUI
+import MastodonAccountsDomain
+import NetworkFoundation
+
+final class ProfileContainerViewController: ViewController {
+    
+    private let profileStore = ProfileStore()
+    
+    private let imageDownloader = ImageDownloader()
+    
+    private var task: Task<Void, Error>?
+    
+    private let loadingViewController: LoadingViewController = {
+        var configuration = UnavailableConfiguration.loading()
+        configuration.text = "Loading profile..."
+        return LoadingViewController(contentConfiguration: configuration)
+    }()
+    
+    private lazy var emptyViewController: EmptyViewController = {
+        var configuration = UnavailableConfiguration.empty()
+        configuration.image = UIImage(systemName: "person.slash")
+        configuration.text = "Profile is currently unavailable"
+        configuration.secondaryText = "Try again later."
+        return EmptyViewController(contentConfiguration: configuration)
+    }()
+    
+    override func setupCommon() {
+        super.setupCommon()
+        transition(to: loadingViewController)
+        task = Task {
+            do {
+                guard let profile = try await profileStore.profile else { return }
+                let configuration = ProfileContentViewController.Configuration(
+                    headerURL: profile.header,
+                    avatarURL: profile.avatar,
+                    displayName: profile.displayName,
+                    username: "@\(profile.username)@\(profileStore.instanceName)",
+                    note: profile.note,
+                    postsCount: profile.statusesCount,
+                    followersCount: profile.followersCount,
+                    followingCount: profile.followingCount,
+                    creationFormattedDate: profile.createdAt,
+                    fields: []
+                )
+                transition(to: ProfileContentViewController(configuration: configuration))
+            } catch {
+                transition(to: emptyViewController)
+            }
+        }
+    }
+    
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        task?.cancel()
+        task = nil
+    }
+}
+
+extension ProfileContainerViewController {
+    
+    private func parse(stringDate: String) async -> String {
+        let isoDateFormatter = ISO8601DateFormatter()
+        isoDateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateStyle = .medium
+        dateFormatter.timeStyle = .none
+        
+        return dateFormatter.string(from: isoDateFormatter.date(from: stringDate)!)
+    }
+}
+
+extension ProfileContainerViewController {
+    
+    private func transition(to viewController: ViewController) {
+        let currentViewController = children.first { $0 is EmptyViewController || $0 is LoadingViewController }
+        viewController.willMove(toParent: self)
+        addChild(viewController)
+        view.addSubview(viewController.view)
+        viewController.didMove(toParent: self)
+        viewController.view.frame = view.frame
+        if let currentViewController {
+            transition(from: currentViewController, to: viewController, duration: CATransaction.animationDuration(), options: .transitionCrossDissolve, animations: nil)
+        }
+    }
+}

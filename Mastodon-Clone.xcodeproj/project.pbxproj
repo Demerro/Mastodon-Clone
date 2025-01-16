@@ -25,10 +25,15 @@
 		69A2781C2CF235980058CD2F /* Exceptions for "Packages" folder in "Mastodon-Clone" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				FoundationUtilities,
+				MastodonAccountsDomain,
 				MastodonApplicationDelegate,
 				MastodonApplicationUI,
 				MastodonAuthorizationDomain,
 				MastodonAuthorizationUI,
+				MastodonCoreUI,
+				MastodonMainUI,
+				MastodonProfileUI,
 				SwiftUtilities,
 				UIKitFoundation,
 				UIKitUtilities,

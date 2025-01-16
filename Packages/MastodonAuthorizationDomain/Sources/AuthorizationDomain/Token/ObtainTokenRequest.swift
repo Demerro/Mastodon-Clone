@@ -11,11 +11,11 @@ import NetworkFoundation
 
 struct ObtainTokenRequest {
     
-    static let baseURLString = "https://mastodon.social/oauth/token"
-    
     let jsonDecoder = JSONDecoder()
     
     let networkService: NetworkService
+    
+    let instanceHost: String
     
     let code: String
 }
@@ -24,7 +24,11 @@ extension ObtainTokenRequest: RequestProtocol {
     
     func response() async throws(Error) -> ObtainTokenResponse {
         Logger.authorizationDomain.info("Starting request for token")
-        var urlComponents = URLComponents(string: Self.baseURLString)!
+        
+        var urlComponents = URLComponents()
+        urlComponents.scheme = "https"
+        urlComponents.host = instanceHost
+        urlComponents.path = "/oauth/token"
         urlComponents.queryItems = [
             URLQueryItem(name: "grant_type", value: "authorization_code"),
             URLQueryItem(name: "code", value: code),
@@ -33,8 +37,10 @@ extension ObtainTokenRequest: RequestProtocol {
             URLQueryItem(name: "redirect_uri", value: Constants.redirectURI),
             URLQueryItem(name: "scope", value: Constants.scopes),
         ]
+        
         var request = URLRequest(url: urlComponents.url!)
         request.httpMethod = "POST"
+        
         do {
             let data = try await networkService.data(for: request)
             let obtainTokenResponse = try jsonDecoder.decode(ObtainTokenResponse.self, from: data)

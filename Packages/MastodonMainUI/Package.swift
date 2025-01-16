@@ -4,19 +4,27 @@
 import PackageDescription
 
 let package = Package(
-    name: "UIKitFoundation",
-    platforms: [.iOS(.v12)],
+    name: "MastodonMainUI",
+    platforms: [.iOS(.v15)],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
-            name: "UIKitFoundation",
-            targets: ["UIKitFoundation"]),
+            name: "MastodonMainUI",
+            targets: ["MastodonMainUI"]),
+    ],
+    dependencies: [
+        .package(path: "UIKitFoundation"),
+        .package(path: "MastodonProfileUI")
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "UIKitFoundation"),
-
+            name: "MastodonMainUI",
+            dependencies: [
+                .byName(name: "UIKitFoundation"),
+                .byName(name: "MastodonProfileUI")
+            ]
+        ),
     ]
 )

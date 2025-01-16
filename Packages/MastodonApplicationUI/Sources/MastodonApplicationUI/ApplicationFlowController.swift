@@ -6,55 +6,43 @@
 //
 
 import UIKit
-
-import AuthorizationUI
 import UIKitFoundation
+import AuthorizationUI
+import MastodonMainUI
+import AuthorizationDomain
 
 public final class ApplicationFlowController: ViewController {
     
     private lazy var authorizationFlowController = AuthorizationFlowController()
     
-    private lazy var applicationFlowView = _ApplicationFlowView(frame: .zero, flowView: { authorizationFlowController.view })
-    
-    public override func loadView() {
-        view = applicationFlowView
-    }
+    private lazy var mainFlowController = MainFlowController()
     
     public override func setupCommon() {
         super.setupCommon()
-        addChild(authorizationFlowController)
+        if AuthorizationService.isAuthorized {
+            mainFlowController.willMove(toParent: self)
+            view.addSubview(mainFlowController.view)
+            addChild(mainFlowController)
+        } else {
+            authorizationFlowController.willMove(toParent: self)
+            view.addSubview(authorizationFlowController.view)
+            addChild(authorizationFlowController)
+            authorizationFlowController.flowDelegate = self
+        }
     }
     
     public override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        authorizationFlowController.didMove(toParent: self)
+        (AuthorizationService.isAuthorized ? mainFlowController : authorizationFlowController).didMove(toParent: self)
     }
 }
 
-fileprivate final class _ApplicationFlowView: View {
-    
-    private let flowViewProvider: () -> UIView
-    
-    var flowView: UIView { flowViewProvider() }
-    
-    override func setupCommon() {
-        super.setupCommon()
-        flowView.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(flowView)
-    }
-    
-    override func setupConstraints() {
-        super.setupConstraints()
-        NSLayoutConstraint.activate([
-            flowView.topAnchor.constraint(equalTo: topAnchor),
-            flowView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            trailingAnchor.constraint(equalTo: flowView.trailingAnchor),
-            bottomAnchor.constraint(equalTo: flowView.bottomAnchor),
-        ])
-    }
-    
-    init(frame: CGRect, @_implicitSelfCapture flowView flowViewProvider: @escaping () -> UIView) {
-        self.flowViewProvider = flowViewProvider
-        super.init(frame: frame)
+extension ApplicationFlowController: AuthorizationFlowControllerDelegate {
+
+    public func authorizationFlowControllerDidFinish(_ viewController: AuthorizationFlowController) {
+        view.addSubview(mainFlowController.view)
+        addChild(mainFlowController)
+        mainFlowController.didMove(toParent: self)
+        transition(from: viewController, to: mainFlowController, duration: CATransaction.animationDuration(), options: .transitionCrossDissolve, animations: nil)
     }
 }

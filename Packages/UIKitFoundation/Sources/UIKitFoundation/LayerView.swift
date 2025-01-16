@@ -12,9 +12,4 @@ open class LayerView<Layer: CALayer>: View {
     public override final class var layerClass: AnyClass { Layer.self }
     
     public final var setLayer: Layer { layer as! Layer }
-    
-    open override func setupAfterLayoutSubviews() {
-        super.setupAfterLayoutSubviews()
-        setLayer.frame = bounds
-    }
 }

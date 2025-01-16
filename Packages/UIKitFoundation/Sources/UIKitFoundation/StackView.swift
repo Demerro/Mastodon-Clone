@@ -1,17 +1,15 @@
 //
-//  View.swift
+//  StackView.swift
 //  UIKitFoundation
 //
-//  Created by Nikita Prokhorchuk on 23.11.24.
+//  Created by Nikita Prokhorchuk on 28.12.24.
 //
 
 import UIKit
 
-open class View: UIView, ViewProtocol, ViewProtocolPrivate {
+open class StackView: UIStackView, ViewProtocol, ViewProtocolPrivate {
     
     final var setupFlags = SetupFlags()
-    
-    public override final class var requiresConstraintBasedLayout: Bool { true }
     
     public override init(frame: CGRect) {
         super.init(frame: frame)
@@ -20,7 +18,7 @@ open class View: UIView, ViewProtocol, ViewProtocolPrivate {
     }
     
     @available(*, unavailable)
-    public required init?(coder: NSCoder) {
+    public required init(coder: NSCoder) {
         fatalError()
     }
     

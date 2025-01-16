@@ -2,21 +2,21 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>UILaunchScreen</key>
-	<dict>
-		<key>UIImageName</key>
-		<string></string>
-	</dict>
+	<key>Client Secret</key>
+	<string>$(CLIENT_SECRET)</string>
+	<key>Instances Secret</key>
+	<string>$(INSTANCES_SECRET)</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<false/>
 	</dict>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIImageName</key>
+		<string></string>
+	</dict>
 	<key>UIViewEdgeAntialiasing</key>
 	<true/>
-	<key>Instances Secret</key>
-	<string>$(INSTANCES_SECRET)</string>
-	<key>Client Secret</key>
-	<string>$(CLIENT_SECRET)</string>
 </dict>
 </plist>

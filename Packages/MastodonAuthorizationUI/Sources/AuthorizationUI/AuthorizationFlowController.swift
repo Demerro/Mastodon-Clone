@@ -12,11 +12,17 @@ import AuthorizationDomain
 import InstancesUI
 import InstancesDomain
 
+@MainActor
+public protocol AuthorizationFlowControllerDelegate: AnyObject {
+    
+    func authorizationFlowControllerDidFinish(_ viewController: AuthorizationFlowController)
+}
+
 public final class AuthorizationFlowController: NavigationController {
     
-    private let authorizationService = AuthorizationService()
-    
     private let instancesViewController = InstancesViewController()
+    
+    public weak var flowDelegate: (any AuthorizationFlowControllerDelegate)?
     
     public init() {
         super.init(rootViewController: instancesViewController)
@@ -28,8 +34,10 @@ public final class AuthorizationFlowController: NavigationController {
 extension AuthorizationFlowController: InstancesViewControllerDelegate {
     
     package func instancesViewController(_ viewController: InstancesViewController, didSelectInstance instance: Instance) {
-        let url = authorizationService.makeAuthorizationURL(instanceName: instance.name)
-        let session = authorizationService.makeWebAuthenticationSession(url: url)
+        let url = AuthorizationService.makeAuthorizationURL(instanceName: instance.name)
+        let session = AuthorizationService.makeWebAuthenticationSession(url: url) { [self] in
+            flowDelegate?.authorizationFlowControllerDidFinish(self)
+        }
         session.presentationContextProvider = self
         session.start()
     }

@@ -33,7 +33,7 @@ package final class InstancesViewController: ViewController {
     
     private var runningTask: Task<Void, Error>?
     
-    package var delegate: (any InstancesViewControllerDelegate)?
+    package weak var delegate: (any InstancesViewControllerDelegate)?
     
     package override func setupCommon() {
         super.setupCommon()

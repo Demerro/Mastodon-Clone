@@ -4,19 +4,27 @@
 import PackageDescription
 
 let package = Package(
-    name: "UIKitFoundation",
-    platforms: [.iOS(.v12)],
+    name: "MastodonAccountsDomain",
+    platforms: [.iOS(.v15)],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
-            name: "UIKitFoundation",
-            targets: ["UIKitFoundation"]),
+            name: "MastodonAccountsDomain",
+            targets: ["MastodonAccountsDomain"]),
+    ],
+    dependencies: [
+        .package(path: "NetworkFoundation"),
+        .package(path: "MastodonAuthorizationDomain"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "UIKitFoundation"),
-
+            name: "MastodonAccountsDomain",
+            dependencies: [
+                .byName(name: "NetworkFoundation"),
+                .product(name: "AuthorizationDomain", package: "MastodonAuthorizationDomain"),
+            ]
+        ),
     ]
 )
