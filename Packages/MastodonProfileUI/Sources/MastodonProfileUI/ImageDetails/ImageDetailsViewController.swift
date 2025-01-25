@@ -55,7 +55,7 @@ final class ImageDetailsViewController: ViewController {
         super.setupCommon()
         scrollView.addSubview(imageView)
         scrollView.delegate = self
-        scrollView.setValue(true, forKey: String(data: Data(base64Encoded: "cHJlc2VydmVzQ2VudGVyRHVyaW5nUm90YXRpb24=")!, encoding: .utf8)!)
+        scrollView.setValue(true, forKey: valueKey(from: "cHJlc2VydmVzQ2VudGVyRHVyaW5nUm90YXRpb24="))
         scrollView.panGestureRecognizer.addTarget(self, action: #selector(handlePan))
         navigationItem.leftBarButtonItem = UIBarButtonItem(systemItem: .close, primaryAction: UIAction { [unowned self] _ in
             delegate?.imageDetailsViewControllerDidFinish(self)

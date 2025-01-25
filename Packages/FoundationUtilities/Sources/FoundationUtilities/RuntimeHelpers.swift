@@ -16,3 +16,8 @@ public func NSSelectorFromEncodedString(_ encodedSelectorName: String) -> Select
 public func NSClassFromEncodedString(_ encodedClassName: String) -> AnyClass? {
     NSClassFromString(String(data: Data(base64Encoded: encodedClassName)!, encoding: .utf8)!)
 }
+
+@inlinable
+public func valueKey(from encodedString: String) -> String {
+    String(data: Data(base64Encoded: encodedString)!, encoding: .utf8)!
+}

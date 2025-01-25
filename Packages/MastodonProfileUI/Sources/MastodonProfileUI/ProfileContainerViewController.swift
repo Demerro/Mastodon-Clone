@@ -9,13 +9,10 @@ import UIKit
 import UIKitFoundation
 import MastodonCoreUI
 import MastodonAccountsDomain
-import NetworkFoundation
 
 final class ProfileContainerViewController: ViewController {
     
     private let profileStore = ProfileStore()
-    
-    private let imageDownloader = ImageDownloader()
     
     private var task: Task<Void, Error>?
     

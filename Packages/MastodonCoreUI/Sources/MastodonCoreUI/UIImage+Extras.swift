@@ -9,13 +9,6 @@ import UIKit.UIImage
 
 extension UIImage {
     
-    public var aspectRatio: CGFloat {
-        size.width / size.height
-    }
-}
-
-extension UIImage {
-    
     public static func animatedImage(withGIFData data: Data) -> UIImage? {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
         
