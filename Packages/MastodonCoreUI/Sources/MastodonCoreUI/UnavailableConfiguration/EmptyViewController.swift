@@ -8,9 +8,17 @@
 import UIKit
 import UIKitFoundation
 
+@MainActor
+public protocol EmptyViewControllerDelegate: AnyObject {
+    
+    func emptyViewControllerDidTapRetryButton(_ viewController: EmptyViewController)
+}
+
 public final class EmptyViewController: ViewController {
     
     private let emptyView = _EmptyView(frame: .zero)
+    
+    public var delegate: (any EmptyViewControllerDelegate)?
     
     public var contentConfiguration: UnavailableConfiguration {
         didSet {
@@ -23,6 +31,13 @@ public final class EmptyViewController: ViewController {
         self.contentConfiguration = contentConfiguration
         super.init()
         apply(configuration: contentConfiguration)
+    }
+    
+    public override func setupCommon() {
+        super.setupCommon()
+        emptyView.retryButton.addAction(UIAction { [unowned self] _ in
+            delegate?.emptyViewControllerDidTapRetryButton(self)
+        }, for: .touchUpInside)
     }
     
     public override func loadView() {
@@ -69,6 +84,12 @@ fileprivate final class _EmptyView: View {
         return $0
     }(UILabel(frame: .zero))
     
+    let retryButton: UIButton = {
+        var configuration = UIButton.Configuration.borderless()
+        configuration.image = UIImage(systemName: "arrow.clockwise.circle.fill")
+        return UIButton(configuration: configuration)
+    }()
+    
     override func setupCommon() {
         super.setupCommon()
         
@@ -76,6 +97,7 @@ fileprivate final class _EmptyView: View {
         stackView.addArrangedSubview(imageView)
         stackView.addArrangedSubview(textLabel)
         stackView.addArrangedSubview(secondaryTextLabel)
+        stackView.addArrangedSubview(retryButton)
         
         stackView.setCustomSpacing(8.0, after: imageView)
     }

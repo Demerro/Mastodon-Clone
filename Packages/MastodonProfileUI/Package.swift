@@ -14,6 +14,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "SwiftUtilities"),
+        .package(path: "UIKitUtilities"),
         .package(path: "FoundationUtilities"),
         .package(path: "NetworkFoundation"),
         .package(path: "MastodonAccountsDomain"),
@@ -26,6 +27,7 @@ let package = Package(
             name: "MastodonProfileUI",
             dependencies: [
                 .byName(name: "SwiftUtilities"),
+                .byName(name: "UIKitUtilities"),
                 .byName(name: "FoundationUtilities"),
                 .byName(name: "NetworkFoundation"),
                 .byName(name: "MastodonAccountsDomain"),

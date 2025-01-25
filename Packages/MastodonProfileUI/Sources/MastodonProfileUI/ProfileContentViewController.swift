@@ -13,28 +13,30 @@ import MastodonAccountsDomain
 @MainActor
 protocol ProfileContentViewControllerDelegate: AnyObject {
     
-    func profileContentViewController(_ viewController: ProfileContentViewController, didSelectAvatarImage image: UIImage)
+    func profileContentViewController(_ viewController: ProfileContentViewController, didSelectImage image: UIImage)
 }
 
 final class ProfileContentViewController: ViewController {
     
-    private let profileView = ProfileView(frame: .zero)
+    let profileView = ProfileView(frame: .zero)
     
     private var runningTask: Task<Void, Never>?
     
+    var lastSelectedImageView: UIImageView?
+    
     weak var delegate: (any ProfileContentViewControllerDelegate)?
     
-    var configuration: Configuration {
+    var configuration: Configuration? {
         didSet {
-            guard configuration != oldValue else { return }
+            guard let configuration, configuration != oldValue else { return }
             apply(configuration: configuration)
         }
     }
     
-    init(configuration: Configuration) {
-        self.configuration = configuration
-        super.init()
-        apply(configuration: configuration)
+    override func setupCommon() {
+        super.setupCommon()
+        profileView.headerView.avatarImageView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleImageViewTapGesture)))
+        profileView.headerView.headerImageView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleImageViewTapGesture)))
     }
     
     override func loadView() {
@@ -66,6 +68,20 @@ extension ProfileContentViewController {
             imagesConfiguration.avatarImage = try? await avatarImage
             profileView.headerView.configuration = imagesConfiguration
         }
+    }
+}
+
+extension ProfileContentViewController {
+    
+    @objc
+    private func handleImageViewTapGesture(_ gestureRecognizer: UITapGestureRecognizer) {
+        guard let imageView = gestureRecognizer.view as? UIImageView,
+              let image = imageView.image
+        else {
+            return
+        }
+        lastSelectedImageView = imageView
+        delegate?.profileContentViewController(self, didSelectImage: image)
     }
 }
 

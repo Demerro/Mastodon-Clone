@@ -13,6 +13,7 @@ final class ProfileView: View {
     private let underlyingScrollView: UIScrollView = {
         $0.translatesAutoresizingMaskIntoConstraints = false
         $0.preservesSuperviewLayoutMargins = true
+        $0.delaysContentTouches = false
         $0.alwaysBounceVertical = true
         $0.showsVerticalScrollIndicator = false
         $0.showsHorizontalScrollIndicator = false
@@ -49,6 +50,7 @@ final class ProfileView: View {
             headerView.topAnchor.constraint(equalTo: underlyingScrollView.topAnchor),
             headerView.leadingAnchor.constraint(equalTo: leadingAnchor),
             trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
+            bottomAnchor.constraint(equalTo: headerView.bottomAnchor),
         ])
     }
 }

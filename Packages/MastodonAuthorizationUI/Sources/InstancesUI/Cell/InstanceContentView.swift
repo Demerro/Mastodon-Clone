@@ -114,11 +114,16 @@ extension InstanceContentView {
         guard configuration != appliedConfiguration else { return }
         appliedConfiguration = configuration
         
-        if let image = configuration.image {
-            Task {
-                let thumbnailImage = await image.byPreparingThumbnail(ofSize: imageView.bounds.size, with: traitCollection.displayScale)
-                UIView.transition(with: imageView, duration: CATransaction.animationDuration(), options: .transitionCrossDissolve) { [self] in
-                    self.imageView.image = thumbnailImage
+        if let cgImage = configuration.image?.cgImage {
+            let image = UIImage(cgImage: cgImage, scale: traitCollection.displayScale, orientation: .up)
+            Task.detached(priority: .high) { [weak self] in
+                guard let self else { return }
+                let thumbnailImage = await image.byPreparingThumbnail(ofSize: imageView.bounds.size)
+                let resultImage = await thumbnailImage?.byPreparingForDisplay()
+                await MainActor.run {
+                    UIView.transition(with: imageView, duration: CATransaction.animationDuration(), options: .transitionCrossDissolve) { [self] in
+                        imageView.image = resultImage
+                    }
                 }
             }
         } else {

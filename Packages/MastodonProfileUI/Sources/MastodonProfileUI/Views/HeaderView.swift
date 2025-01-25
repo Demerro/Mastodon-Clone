@@ -10,19 +10,21 @@ import UIKitFoundation
 
 final class HeaderView: View {
     
-    private let headerImageView: UIImageView = {
+    let headerImageView: UIImageView = {
         $0.translatesAutoresizingMaskIntoConstraints = false
+        $0.isUserInteractionEnabled = true
         $0.clipsToBounds = true
         $0.contentMode = .scaleAspectFill
         $0.backgroundColor = .systemGray
         return $0
     }(UIImageView(frame: .zero))
     
-    private let avatarImageView: UIImageView = {
+    let avatarImageView: UIImageView = {
         $0.translatesAutoresizingMaskIntoConstraints = false
+        $0.isUserInteractionEnabled = true
         $0.clipsToBounds = true
         $0.contentMode = .scaleAspectFill
-        $0.backgroundColor = .systemGray6
+        $0.backgroundColor = .systemGray
         $0.layer.borderColor = UIColor.white.cgColor
         $0.layer.borderWidth = 2.5
         $0.layer.cornerCurve = .continuous
@@ -93,7 +95,7 @@ final class HeaderView: View {
             headerImageView.topAnchor.constraint(equalTo: topAnchor),
             headerImageView.leadingAnchor.constraint(equalTo: leadingAnchor),
             trailingAnchor.constraint(equalTo: headerImageView.trailingAnchor),
-            headerImageView.heightAnchor.constraint(equalToConstant: 250.0),
+            headerImageView.heightAnchor.constraint(equalTo: headerImageView.widthAnchor, multiplier: 1.0 / 3.0),
             
             avatarImageView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
             avatarImageView.centerYAnchor.constraint(equalTo: headerImageView.bottomAnchor),
@@ -133,23 +135,16 @@ extension HeaderView {
             following: configuration.followingCount,
             followers: configuration.followersCount
         )
-        setImage(configuration.avatarImage, to: avatarImageView)
-        setImage(configuration.headerImage, to: headerImageView)
+        setImageWithTransition(configuration.avatarImage, to: avatarImageView)
+        setImageWithTransition(configuration.headerImage, to: headerImageView)
     }
 }
 
 extension HeaderView {
     
-    private func setImage(_ image: UIImage?, to imageView: UIImageView) {
-        if let image {
-            Task {
-                let thumbnailImage = await image.byPreparingThumbnail(ofSize: imageView.bounds.size, with: traitCollection.displayScale)
-                UIView.transition(with: imageView, duration: CATransaction.animationDuration(), options: .transitionCrossDissolve) {
-                    imageView.image = thumbnailImage
-                }
-            }
-        } else {
-            imageView.image = nil
+    private func setImageWithTransition(_ image: UIImage?, to imageView: UIImageView) {
+        UIView.transition(with: imageView, duration: CATransaction.animationDuration(), options: .transitionCrossDissolve) {
+            imageView.image = image
         }
     }
 }

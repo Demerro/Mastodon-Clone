@@ -19,22 +19,38 @@ final class ProfileContainerViewController: ViewController {
     
     private var task: Task<Void, Error>?
     
+    let contentViewController = ProfileContentViewController()
+    
     private let loadingViewController: LoadingViewController = {
         var configuration = UnavailableConfiguration.loading()
         configuration.text = "Loading profile..."
         return LoadingViewController(contentConfiguration: configuration)
     }()
     
-    private lazy var emptyViewController: EmptyViewController = {
+    private let emptyViewController: EmptyViewController = {
         var configuration = UnavailableConfiguration.empty()
         configuration.image = UIImage(systemName: "person.slash")
         configuration.text = "Profile is currently unavailable"
-        configuration.secondaryText = "Try again later."
+        configuration.secondaryText = "Try again."
         return EmptyViewController(contentConfiguration: configuration)
     }()
     
     override func setupCommon() {
         super.setupCommon()
+        emptyViewController.delegate = self
+        fetchProfile()
+    }
+    
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        task?.cancel()
+        task = nil
+    }
+}
+
+extension ProfileContainerViewController {
+    
+    private func fetchProfile() {
         transition(to: loadingViewController)
         task = Task {
             do {
@@ -51,21 +67,13 @@ final class ProfileContainerViewController: ViewController {
                     creationFormattedDate: profile.createdAt,
                     fields: []
                 )
-                transition(to: ProfileContentViewController(configuration: configuration))
+                contentViewController.configuration = configuration
+                transition(to: contentViewController)
             } catch {
                 transition(to: emptyViewController)
             }
         }
     }
-    
-    override func viewDidDisappear(_ animated: Bool) {
-        super.viewDidDisappear(animated)
-        task?.cancel()
-        task = nil
-    }
-}
-
-extension ProfileContainerViewController {
     
     private func parse(stringDate: String) async -> String {
         let isoDateFormatter = ISO8601DateFormatter()
@@ -91,5 +99,33 @@ extension ProfileContainerViewController {
         if let currentViewController {
             transition(from: currentViewController, to: viewController, duration: CATransaction.animationDuration(), options: .transitionCrossDissolve, animations: nil)
         }
+    }
+}
+
+extension ProfileContainerViewController: EmptyViewControllerDelegate {
+    
+    func emptyViewControllerDidTapRetryButton(_ viewController: EmptyViewController) {
+        fetchProfile()
+    }
+}
+
+extension ProfileContainerViewController: ImageDetailsTransitioningDelegate {
+    
+    func willTransitionItemWith(context: any UIViewControllerContextTransitioning, coordinator: (any UIViewControllerTransitionCoordinator)?) {
+        contentViewController.lastSelectedImageView!.isHidden = true
+    }
+    
+    func item(forTransitionWith context: any UIViewControllerContextTransitioning) -> ImageDetailsItem {
+        let imageView = contentViewController.lastSelectedImageView!
+        return ImageDetailsItem(image: imageView.image!, cornerRadius: imageView.layer.cornerRadius, borderWidth: imageView.layer.borderWidth, borderColor: imageView.layer.borderColor)
+    }
+    
+    func itemFrame(in view: UIView, forTransitionWith context: any UIViewControllerContextTransitioning) -> CGRect {
+        let imageView = contentViewController.lastSelectedImageView!
+        return contentViewController.profileView.convert(imageView.frame, to: view)
+    }
+    
+    func didTransitionItemWith(context: any UIViewControllerContextTransitioning) {
+        contentViewController.lastSelectedImageView!.isHidden = false
     }
 }

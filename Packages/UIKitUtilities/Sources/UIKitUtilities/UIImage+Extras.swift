@@ -9,10 +9,8 @@ import UIKit.UIImage
 
 extension UIImage {
     
-    public func byPreparingThumbnail(ofSize size: CGSize, with displayScale: CGFloat) async -> UIImage? {
-        guard let cgImage else { return nil }
-        let scaledImage = UIImage(cgImage: cgImage, scale: displayScale, orientation: .up)
-        return await scaledImage.byPreparingThumbnail(ofSize: CGSize(width: size.width, height: size.height))
+    public var aspectRatio: CGFloat {
+        size.width / size.height
     }
 }
 
