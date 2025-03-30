@@ -94,6 +94,7 @@ extension FeedContainerViewController: FeedContentViewControllerDelegate {
     func feedContentViewController(_ viewController: FeedContentViewController, didSelectVideoWithURL url: URL, previewImage image: UIImage) {
         let videoDetailsViewController = VideoDetailsViewController(thumbnailImage: image, videoURL: url)
         videoDetailsViewController.transitioningDelegate = self
+        videoDetailsViewController.delegate = self
         videoDetailsViewController.modalPresentationStyle = .fullScreen
         self.videoDetailsViewController = videoDetailsViewController
         present(videoDetailsViewController, animated: true)
