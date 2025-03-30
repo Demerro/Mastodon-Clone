@@ -36,9 +36,9 @@ extension InstancesListRequest: RequestProtocol {
         
         do {
             let data = try await networkService.data(for: request)
-            let instancesListResponse = try jsonDecoder.decode(InstancesResponse.self, from: data)
+            let decodedData = try jsonDecoder.decode(InstancesResponse.self, from: data)
             Logger.instancesDomain.debug("Request for instances list succeeded")
-            return instancesListResponse
+            return decodedData
         } catch let networkError as NetworkService.Error {
             Logger.instancesDomain.error("Encountered network error: \(networkError)")
             throw .network(networkError)

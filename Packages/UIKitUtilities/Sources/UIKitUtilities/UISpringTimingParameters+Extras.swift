@@ -9,7 +9,7 @@ import UIKit
 
 extension UISpringTimingParameters {
     
-    public convenience init(dampingRatio: Double, frequencyResponse: Double, initialVelocity: CGVector = .zero) {
+    public convenience init(dampingRatio: Double = 0.825, frequencyResponse: Double = 0.5, initialVelocity: CGVector = .zero) {
         let mass = 1.0
         let stiffness = pow(2.0 * .pi / frequencyResponse, 2.0) * mass
         let dampingCoefficient = 4.0 * .pi * dampingRatio * mass / frequencyResponse

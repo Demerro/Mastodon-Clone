@@ -1,6 +1,6 @@
 //
-//  UIImage+Extras.swift
-//  UIKitUtilities
+//  UIImage+AnimatedImage.swift
+//  MastodonCoreUI
 //
 //  Created by Nikita Prokhorchuk on 23.12.24.
 //

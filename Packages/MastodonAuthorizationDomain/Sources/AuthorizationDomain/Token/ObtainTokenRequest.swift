@@ -43,9 +43,9 @@ extension ObtainTokenRequest: RequestProtocol {
         
         do {
             let data = try await networkService.data(for: request)
-            let obtainTokenResponse = try jsonDecoder.decode(ObtainTokenResponse.self, from: data)
+            let decodedData = try jsonDecoder.decode(ObtainTokenResponse.self, from: data)
             Logger.authorizationDomain.info("Token request succeeded")
-            return obtainTokenResponse
+            return decodedData
         } catch let networkError as NetworkService.Error {
             Logger.authorizationDomain.error("Encountered network error: \(networkError)")
             throw .network(networkError)

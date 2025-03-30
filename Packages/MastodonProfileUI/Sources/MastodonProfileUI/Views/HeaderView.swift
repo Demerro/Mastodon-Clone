@@ -15,7 +15,7 @@ final class HeaderView: View {
         $0.isUserInteractionEnabled = true
         $0.clipsToBounds = true
         $0.contentMode = .scaleAspectFill
-        $0.backgroundColor = .systemGray
+        $0.backgroundColor = .systemGray6
         return $0
     }(UIImageView(frame: .zero))
     
@@ -24,7 +24,7 @@ final class HeaderView: View {
         $0.isUserInteractionEnabled = true
         $0.clipsToBounds = true
         $0.contentMode = .scaleAspectFill
-        $0.backgroundColor = .systemGray
+        $0.backgroundColor = .systemGray6
         $0.layer.borderColor = UIColor.white.cgColor
         $0.layer.borderWidth = 2.5
         $0.layer.cornerCurve = .continuous
@@ -129,7 +129,7 @@ extension HeaderView {
     private func apply(configuration: Configuration) {
         displayNameLabel.text = configuration.displayName
         usernameLabel.text = configuration.username
-        noteLabel.attributedText = configuration.note?.htmlAttributedString(with: [.font: UIFont.preferredFont(forTextStyle: .body)])
+//        noteLabel.attributedText = configuration.note?.htmlAttributedString(with: [.font: UIFont.preferredFont(forTextStyle: .body)])
         informationStackView.configuration = InformationStackView.Configuration(
             posts: configuration.postsCount,
             following: configuration.followingCount,

@@ -20,5 +20,6 @@ let package = Package(
             name: "MastodonCoreUI",
             dependencies: ["UIKitFoundation"]
         ),
-    ]
+    ],
+    swiftLanguageModes: [.v6]
 )

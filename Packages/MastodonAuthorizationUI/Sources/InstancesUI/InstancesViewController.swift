@@ -7,9 +7,8 @@
 
 import UIKit
 import UIKitFoundation
-import Network
-import NetworkFoundation
 import InstancesDomain
+import MastodonUtilities
 
 @MainActor
 package protocol InstancesViewControllerDelegate: AnyObject {
@@ -88,8 +87,11 @@ extension InstancesViewController {
             guard let url = item.thumbnailURL else { return }
             Task {
                 let image = try? await imageDownloader.loadImage(from: url)
-                guard cell.itemIdentifier == itemIdentifier else { return }
-                guard var configuration = cell.contentConfiguration as? InstanceContentView.Configuration else { return }
+                guard cell.itemIdentifier == itemIdentifier,
+                      var configuration = cell.contentConfiguration as? InstanceContentView.Configuration
+                else {
+                    return
+                }
                 configuration.image = image
                 cell.contentConfiguration = configuration
             }

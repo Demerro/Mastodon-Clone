@@ -86,7 +86,7 @@ extension ShimmerInstanceContentView {
     private static func makeShimmerView() -> UIView {
         let view = UIView(frame: .zero)
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .systemGray
+        view.backgroundColor = .systemGray6
         view.layer.cornerCurve = .continuous
         view.layer.cornerRadius = 5.0
         return view

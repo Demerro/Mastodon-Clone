@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6996BF192D452BE600508C9C /* MastodonSharedUI in Frameworks */ = {isa = PBXBuildFile; productRef = 6996BF182D452BE600508C9C /* MastodonSharedUI */; };
 		69A2781F2CF237240058CD2F /* MastodonApplicationDelegate in Frameworks */ = {isa = PBXBuildFile; productRef = 69A2781E2CF237240058CD2F /* MastodonApplicationDelegate */; };
 /* End PBXBuildFile section */
 
@@ -32,8 +33,12 @@
 				MastodonAuthorizationDomain,
 				MastodonAuthorizationUI,
 				MastodonCoreUI,
+				MastodonFeedDomain,
+				MastodonFeedUI,
 				MastodonMainUI,
 				MastodonProfileUI,
+				MastodonSharedUI,
+				MastodonUtilities,
 				SwiftUtilities,
 				UIKitFoundation,
 				UIKitUtilities,
@@ -66,6 +71,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6996BF192D452BE600508C9C /* MastodonSharedUI in Frameworks */,
 				69A2781F2CF237240058CD2F /* MastodonApplicationDelegate in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -120,6 +126,7 @@
 			name = "Mastodon-Clone";
 			packageProductDependencies = (
 				69A2781E2CF237240058CD2F /* MastodonApplicationDelegate */,
+				6996BF182D452BE600508C9C /* MastodonSharedUI */,
 			);
 			productName = "Mastodon-Clone";
 			productReference = 69A277EE2CF232400058CD2F /* Mastodon-Clone.app */;
@@ -208,6 +215,8 @@
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = "$(SWIFT_UPCOMING_FEATURE_6_0)";
+				SWIFT_UPCOMING_FEATURE_REGION_BASED_ISOLATION = "$(SWIFT_UPCOMING_FEATURE_6_0)";
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
@@ -241,6 +250,8 @@
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = "$(SWIFT_UPCOMING_FEATURE_6_0)";
+				SWIFT_UPCOMING_FEATURE_REGION_BASED_ISOLATION = "$(SWIFT_UPCOMING_FEATURE_6_0)";
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
@@ -393,6 +404,10 @@
 /* End XCConfigurationList section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		6996BF182D452BE600508C9C /* MastodonSharedUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MastodonSharedUI;
+		};
 		69A2781E2CF237240058CD2F /* MastodonApplicationDelegate */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = MastodonApplicationDelegate;

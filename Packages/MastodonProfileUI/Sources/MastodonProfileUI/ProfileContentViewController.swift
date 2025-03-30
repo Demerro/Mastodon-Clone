@@ -47,6 +47,8 @@ final class ProfileContentViewController: ViewController {
         super.viewWillDisappear(animated)
         runningTask?.cancel()
     }
+    
+    override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
 }
 
 extension ProfileContentViewController {

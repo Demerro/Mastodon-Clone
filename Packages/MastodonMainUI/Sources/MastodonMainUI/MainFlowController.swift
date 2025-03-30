@@ -7,13 +7,16 @@
 
 import UIKit
 import UIKitFoundation
+import MastodonFeedUI
 import MastodonProfileUI
 
 public final class MainFlowController: TabBarController {
     
+    private let feedFlowController = FeedFlowController()
+    
     private let profileFlowController = ProfileFlowController()
     
     public init() {
-        super.init(viewControllers: [profileFlowController])
+        super.init(viewControllers: [feedFlowController, profileFlowController])
     }
 }

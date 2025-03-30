@@ -1,6 +1,6 @@
 //
 //  UITabBarController+Extras.swift
-//  UIKitUtilities
+//  MastodonCoreUI
 //
 //  Created by Nikita Prokhorchuk on 23.01.25.
 //

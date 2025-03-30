@@ -87,7 +87,9 @@ fileprivate final class _EmptyView: View {
     let retryButton: UIButton = {
         var configuration = UIButton.Configuration.borderless()
         configuration.image = UIImage(systemName: "arrow.clockwise.circle.fill")
-        return UIButton(configuration: configuration)
+        let button = UIButton(configuration: configuration)
+        if #available(iOS 17.0, *) { button.isSymbolAnimationEnabled = true }
+        return button
     }()
     
     override func setupCommon() {

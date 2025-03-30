@@ -11,8 +11,6 @@ import UIKitUtilities
 
 final class FieldView: StackView, UIContentView {
     
-    private var layoutMarginsDidChangeVisitedOnce = false
-    
     private let titleLabel: UILabel = {
         $0.textColor = .secondaryLabel
         $0.numberOfLines = 1
@@ -54,6 +52,7 @@ final class FieldView: StackView, UIContentView {
         
         axis = .vertical
         preservesSuperviewLayoutMargins = true
+        isLayoutMarginsRelativeArrangement = true
         
         addArrangedSubview(titleLabel)
         addArrangedSubview(valueTextView)
@@ -61,12 +60,9 @@ final class FieldView: StackView, UIContentView {
     
     override func layoutMarginsDidChange() {
         super.layoutMarginsDidChange()
-        guard !layoutMarginsDidChangeVisitedOnce else { return }
-        layoutMarginsDidChangeVisitedOnce = true
         let verticalSpacing = 11.0
         let horizontalSpacing = directionalLayoutMargins.leading
         layoutMargins = UIEdgeInsets(top: verticalSpacing, left: horizontalSpacing, bottom: verticalSpacing, right: horizontalSpacing)
-        isLayoutMarginsRelativeArrangement = true
     }
 }
 
@@ -77,8 +73,8 @@ extension FieldView {
         appliedConfiguration = configuration
         
         titleLabel.text = configuration.title
-        guard let htmlAttributedString = configuration.value?.htmlAttributedString(with: [.font: UIFont.preferredFont(forTextStyle: .body)]) else { return }
-        valueTextView.attributedText = htmlAttributedString
+//        guard let htmlAttributedString = configuration.value?.htmlAttributedString(with: [.font: UIFont.preferredFont(forTextStyle: .body)]) else { return }
+//        valueTextView.attributedText = htmlAttributedString
     }
 }
 

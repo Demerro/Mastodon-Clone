@@ -35,9 +35,9 @@ extension ProfileRequest: RequestProtocol {
         
         do {
             let data = try await networkService.data(for: request)
-            let instancesListResponse = try jsonDecoder.decode(Account.self, from: data)
+            let decodedData = try jsonDecoder.decode(Account.self, from: data)
             Logger.accountsDomain.debug("Request for current account succeeded")
-            return instancesListResponse
+            return decodedData
         } catch let networkError as NetworkService.Error {
             Logger.accountsDomain.error("Encountered network error: \(networkError)")
             throw .network(networkError)
