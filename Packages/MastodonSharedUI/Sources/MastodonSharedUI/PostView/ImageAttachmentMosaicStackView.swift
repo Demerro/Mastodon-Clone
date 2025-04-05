@@ -107,7 +107,7 @@ extension ImageAttachmentMosaicStackView {
         
         if let heightConstraint { NSLayoutConstraint.deactivate([heightConstraint]) }
         heightConstraint = if configuration.imagesCount == 1 {
-            heightAnchor.constraint(equalTo: widthAnchor, multiplier: configuration.singleImageAspectRatio)
+            widthAnchor.constraint(equalTo: heightAnchor, multiplier: configuration.singleImageAspectRatio)
         } else {
             heightAnchor.constraint(equalToConstant: 300.0)
         }

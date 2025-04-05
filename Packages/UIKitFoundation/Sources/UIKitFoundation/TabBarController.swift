@@ -22,9 +22,9 @@ open class TabBarController: UITabBarController {
     
     open override func viewIsAppearing(_ animated: Bool) {
         super.viewIsAppearing(animated)
-        let items = tabBar.value(forKey: valueKey(from: "X2l0ZW1z")) as! [NSObject]
+        let items = tabBar.value(forKey: valueKey(from: "X2l0ZW1z")) as! [NSObject] // _items
         for item in items {
-            let button = item.value(forKey: valueKey(from: "X3ZpZXc=")) as! UIControl
+            let button = item.value(forKey: valueKey(from: "X3ZpZXc=")) as! UIControl // _view
             button.addGestureRecognizer(HighlightTabBarButtonGestureRecognizer())
         }
     }
@@ -33,7 +33,7 @@ open class TabBarController: UITabBarController {
 fileprivate final class HighlightTabBarButtonGestureRecognizer: UIGestureRecognizer {
     
     private var imageView: UIImageView? {
-        view?.value(forKey: valueKey(from: "X2ltYWdlVmlldw==")) as? UIImageView
+        view?.value(forKey: valueKey(from: "X2ltYWdlVmlldw==")) as? UIImageView // _imageView
     }
     
     override init(target: Any?, action: Selector?) {

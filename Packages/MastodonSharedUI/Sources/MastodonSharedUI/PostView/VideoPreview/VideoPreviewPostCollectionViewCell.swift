@@ -7,6 +7,7 @@
 
 import UIKit
 import UIKitFoundation
+import UIKitUtilities
 
 public protocol VideoPreviewPostCollectionViewCellDelegate: AnyObject {
     
@@ -19,12 +20,12 @@ public final class VideoPreviewPostCollectionViewCell: CollectionViewCell {
     
     public var itemIdentifier: AnyHashable?
     
-    private let headerStackView: PostHeaderStackView = {
+    internal let headerStackView: PostHeaderStackView = {
         $0.translatesAutoresizingMaskIntoConstraints = false
         return $0
     }(PostHeaderStackView(frame: .zero))
     
-    private let contentTextView: UITextView = {
+    internal let contentTextView: UITextView = {
         $0.translatesAutoresizingMaskIntoConstraints = false
         $0.textContainerInset = .zero
         $0.isScrollEnabled = false
@@ -42,14 +43,21 @@ public final class VideoPreviewPostCollectionViewCell: CollectionViewCell {
         return $0
     }(VideoPreviewView(frame: .zero))
     
-    private let buttonsStackView: PostButtonsStackView = {
+    internal let buttonsStackView: PostButtonsStackView = {
         $0.translatesAutoresizingMaskIntoConstraints = false
         return $0
     }(PostButtonsStackView(frame: .zero))
     
-    public var needsApplyConfiguration = false
+    internal let spoilerView: SpoilerView = {
+        $0.translatesAutoresizingMaskIntoConstraints = false
+        return $0
+    }(SpoilerView(frame: .zero))
     
-    private var oldConstraints = [NSLayoutConstraint]()
+    private var layoutManager: VideoPreviewPostCollectionViewCellLayoutManager!
+    
+    private var currentAnimator: UIViewPropertyAnimator?
+    
+    public var needsApplyConfiguration = false
     
     public var configuration: Configuration? {
         didSet { setNeedsApplyConfiguration() }
@@ -57,32 +65,14 @@ public final class VideoPreviewPostCollectionViewCell: CollectionViewCell {
     
     public weak var delegate: (any VideoPreviewPostCollectionViewCellDelegate)?
     
+    public weak var layoutInvalidationDelegate: (any LayoutInvalidationDelegate)?
+    
     public override func setupCommon() {
         super.setupCommon()
-        contentView.addSubview(headerStackView)
-        contentView.addSubview(contentTextView)
-        contentView.addSubview(videoPreviewView)
-        contentView.addSubview(buttonsStackView)
+        layoutManager = VideoPreviewPostCollectionViewCellLayoutManager(cell: self)
         contentTextView.delegate = self
-        videoPreviewView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleTapGestureRecognizer)))
-    }
-    
-    public override func setupConstraints() {
-        super.setupConstraints()
-        NSLayoutConstraint.activate([
-            headerStackView.topAnchor.constraint(equalToSystemSpacingBelow: contentView.topAnchor, multiplier: 2.0),
-            headerStackView.leadingAnchor.constraint(equalToSystemSpacingAfter: contentView.leadingAnchor, multiplier: 2.0),
-            contentView.trailingAnchor.constraint(equalToSystemSpacingAfter: headerStackView.trailingAnchor, multiplier: 2.0),
-            contentTextView.topAnchor.constraint(equalToSystemSpacingBelow: headerStackView.bottomAnchor, multiplier: 1.0),
-            
-            videoPreviewView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            contentView.trailingAnchor.constraint(equalTo: videoPreviewView.trailingAnchor),
-            buttonsStackView.topAnchor.constraint(equalToSystemSpacingBelow: videoPreviewView.bottomAnchor, multiplier: 2.0),
-            
-            buttonsStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            contentView.trailingAnchor.constraint(equalTo: buttonsStackView.trailingAnchor),
-            contentView.bottomAnchor.constraint(equalToSystemSpacingBelow: buttonsStackView.bottomAnchor, multiplier: 2.0).priority(.defaultLow),
-        ])
+        headerStackView.delegate = self
+        contentView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleTapGestureRecognizer)))
     }
     
     public override func updateConstraints() {
@@ -106,39 +96,61 @@ extension VideoPreviewPostCollectionViewCell {
     }
     
     private func applyConfiguration() {
-        var constraints = [NSLayoutConstraint]()
-        
         headerStackView.configuration = configuration?.headerConfiguration
-        
-        contentTextView.text = configuration?.content
-        let contentIsEmpty = configuration?.content.isEmpty ?? true
-        contentTextView.isHidden = contentIsEmpty
-        if contentIsEmpty {
-            constraints += [
-                videoPreviewView.topAnchor.constraint(equalToSystemSpacingBelow: headerStackView.bottomAnchor, multiplier: 1.0)
-            ]
-        } else {
-            constraints += [
-                contentTextView.leadingAnchor.constraint(equalToSystemSpacingAfter: contentView.leadingAnchor, multiplier: 2.0),
-                contentView.trailingAnchor.constraint(equalToSystemSpacingAfter: contentTextView.trailingAnchor, multiplier: 2.0),
-                videoPreviewView.topAnchor.constraint(equalToSystemSpacingBelow: contentTextView.bottomAnchor, multiplier: 1.0),
-            ]
-        }
-        
         videoPreviewView.configuration = configuration?.videoPreviewViewConfiguration
+        contentTextView.text = configuration?.content
         buttonsStackView.configuration = configuration?.buttonsConfiguration
+        spoilerView.configuration = configuration?.spoilerConfiguration
         
-        NSLayoutConstraint.deactivate(oldConstraints)
-        NSLayoutConstraint.activate(constraints)
-        oldConstraints = constraints
+        let hasSpoiler = configuration?.spoilerConfiguration != nil
+        spoilerView.alpha = hasSpoiler ? 1.0 : 0.0
+        contentTextView.alpha = hasSpoiler ? 0.0 : 1.0
+        videoPreviewView.alpha = hasSpoiler ? 0.0 : 1.0
+        
+        layoutManager.isSpoilerVisible = hasSpoiler
+        layoutManager.layout()
     }
 }
 
 extension VideoPreviewPostCollectionViewCell {
     
     @objc
-    private func handleTapGestureRecognizer(_ tapGestureRecognizer: UITapGestureRecognizer) {
-        delegate?.videoPreviewPostCollectionViewCell(self, didSelectImageView: videoPreviewView.imageView)
+    private func handleTapGestureRecognizer(_ gestureRecognizer: UITapGestureRecognizer) {
+        let location = gestureRecognizer.location(in: contentView)
+        if !spoilerView.isHidden, spoilerView.frame.contains(location) {
+            headerStackView.toggleEye()
+            layoutManager.isSpoilerVisible.toggle()
+            layoutManager.layout()
+            layoutManager.isSpoilerVisible ? animateSpoilerAppearance() : animateContentAppearance()
+            layoutInvalidationDelegate?.invalidateLayout(self)
+        } else if videoPreviewView.frame.contains(location) {
+            delegate?.videoPreviewPostCollectionViewCell(self, didSelectImageView: videoPreviewView.imageView)
+        }
+    }
+}
+
+extension VideoPreviewPostCollectionViewCell {
+    
+    private func animateContentAppearance() {
+        currentAnimator?.stopAnimation(true)
+        currentAnimator = UIViewPropertyAnimator(duration: 0.0, timingParameters: UISpringTimingParameters(dampingRatio: 0.825, frequencyResponse: 0.3))
+        currentAnimator!.addAnimations { [unowned self] in
+            spoilerView.alpha = 0.0
+            contentTextView.alpha = 1.0
+            videoPreviewView.alpha = 1.0
+        }
+        currentAnimator!.startAnimation()
+    }
+    
+    private func animateSpoilerAppearance() {
+        currentAnimator?.stopAnimation(true)
+        currentAnimator = UIViewPropertyAnimator(duration: 0.0, timingParameters: UISpringTimingParameters(dampingRatio: 0.825, frequencyResponse: 0.3))
+        currentAnimator!.addAnimations { [unowned self] in
+            spoilerView.alpha = 1.0
+            contentTextView.alpha = 0.0
+            videoPreviewView.alpha = 0.0
+        }
+        currentAnimator!.startAnimation()
     }
 }
 
@@ -147,6 +159,16 @@ extension VideoPreviewPostCollectionViewCell: UITextViewDelegate {
     public func textView(_ textView: UITextView, shouldInteractWith URL: URL, in characterRange: NSRange) -> Bool {
         delegate?.videoPreviewPostCollectionViewCell(self, didSelectURL: URL)
         return false
+    }
+}
+
+extension VideoPreviewPostCollectionViewCell: PostHeaderStackViewDelegate {
+    
+    public func postHeaderStackViewDidTapEyeButton(_ stackView: PostHeaderStackView) {
+        layoutManager.isSpoilerVisible.toggle()
+        layoutManager.layout()
+        layoutManager.isSpoilerVisible ? animateSpoilerAppearance() : animateContentAppearance()
+        layoutInvalidationDelegate?.invalidateLayout(self)
     }
 }
 
@@ -160,12 +182,21 @@ extension VideoPreviewPostCollectionViewCell {
         
         public var videoPreviewViewConfiguration: VideoPreviewView.Configuration?
         
+        public var spoilerConfiguration: SpoilerView.Configuration?
+        
         public let buttonsConfiguration: PostButtonsStackView.Configuration
         
-        public init(headerConfiguration: PostHeaderStackView.Configuration, content: String, videoPreviewViewConfiguration: VideoPreviewView.Configuration? = nil, buttonsConfiguration: PostButtonsStackView.Configuration) {
+        public init(
+            headerConfiguration: PostHeaderStackView.Configuration,
+            content: String,
+            videoPreviewViewConfiguration: VideoPreviewView.Configuration? = nil,
+            spoilerConfiguration: SpoilerView.Configuration?,
+            buttonsConfiguration: PostButtonsStackView.Configuration
+        ) {
             self.headerConfiguration = headerConfiguration
             self.content = content
             self.videoPreviewViewConfiguration = videoPreviewViewConfiguration
+            self.spoilerConfiguration = spoilerConfiguration
             self.buttonsConfiguration = buttonsConfiguration
         }
     }

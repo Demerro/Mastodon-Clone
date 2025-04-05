@@ -74,13 +74,14 @@ extension FeedContentViewController {
         .init { [unowned self] cell, indexPath, itemIdentifier in
             cell.itemIdentifier = itemIdentifier
             cell.delegate = self
+            cell.layoutInvalidationDelegate = self
             
             let status = configuration.statuses[indexPath.item]
             let headerContentConfiguration = PostHeaderStackView.ContentConfiguration(
                 displayName: status.account.displayName,
                 time: relativeDateTimeFormatter.string(for: status.createdAt)!,
                 username: status.account.username,
-                eyeHidden: true
+                eyeHidden: !status.sensitive
             )
             var previewCardConfiguration: PreviewCardView.Configuration?
             if let previewCard = status.previewCard {
@@ -103,6 +104,7 @@ extension FeedContentViewController {
                 content: status.content,
                 previewURL: status.previewCard?.url,
                 previewCardConfiguration: previewCardConfiguration,
+                spoilerConfiguration: status.sensitive ? SpoilerView.Configuration(text: status.spoilerText) : nil,
                 buttonsConfiguration: buttonsConfiguration
             )
             
@@ -130,6 +132,7 @@ extension FeedContentViewController {
         .init { [unowned self] cell, indexPath, itemIdentifier in
             cell.itemIdentifier = itemIdentifier
             cell.delegate = self
+            cell.layoutInvalidationDelegate = self
 
             let status = configuration.statuses[indexPath.item]
             
@@ -137,7 +140,7 @@ extension FeedContentViewController {
                 displayName: status.account.displayName,
                 time: relativeDateTimeFormatter.string(for: status.createdAt)!,
                 username: status.account.username,
-                eyeHidden: true
+                eyeHidden: !status.sensitive
             )
             
             let buttonsConfiguration = PostButtonsStackView.Configuration(
@@ -148,14 +151,46 @@ extension FeedContentViewController {
             )
             
             let mediaAttachment = status.mediaAttachments.first!
-            let singleImageAspectRatio = mediaAttachment.meta.original.width / mediaAttachment.meta.original.height
+            let imageAttachmentPreparationConfiguration = ImageAttachmentMosaicStackView.PreparationConfiguration(
+                singleImageAspectRatio: mediaAttachment.meta.original.width / mediaAttachment.meta.original.height,
+                imagesCount: status.mediaAttachments.count
+            )
             var configuration = ImageAttachmentPostCollectionViewCell.Configuration(
                 headerConfiguration: headerContentConfiguration,
                 content: status.content,
-                imageAttachmentMosaicStackViewConfiguration: ImageAttachmentMosaicStackView.PreparationConfiguration(singleImageAspectRatio: singleImageAspectRatio, imagesCount: status.mediaAttachments.count),
+                imageAttachmentMosaicStackViewConfiguration: imageAttachmentPreparationConfiguration,
+                spoilerConfiguration: status.sensitive ? SpoilerView.Configuration(text: status.spoilerText, imageAttachmentMosaicStackViewConfiguration: imageAttachmentPreparationConfiguration) : nil,
                 buttonsConfiguration: buttonsConfiguration
             )
+            
             cell.configuration = configuration
+            
+            if status.sensitive {
+                Task {
+                    let indexedImages = await withTaskGroup(of: (Int, UIImage?).self) { [weak imageDownloader] taskGroup in
+                        guard let imageDownloader else { return [Int: UIImage?]() }
+                        for (index, mediaAttachment) in status.mediaAttachments.enumerated() {
+                            taskGroup.addTask {
+                                let image: UIImage? = if let blurHash = mediaAttachment.blurHash {
+                                    UIImage(blurHash: blurHash, size: CGSize(width: mediaAttachment.meta.small.width, height: mediaAttachment.meta.small.height))
+                                } else {
+                                    nil
+                                }
+                                return (index, image)
+                            }
+                        }
+                        return await taskGroup.reduce(into: [Int: UIImage?]()) { result, element in
+                            result[element.0] = element.1
+                        }
+                    }
+                    guard cell.itemIdentifier as? String == itemIdentifier else { return }
+                    let images = indexedImages
+                        .sorted { $0.key < $1.key }
+                        .map { $0.value }
+                    configuration.spoilerConfiguration?.imageAttachmentMosaicStackViewConfiguration = ImageAttachmentMosaicStackView.ContentConfiguration(images: images)
+                    cell.configuration = configuration
+                }
+            }
             
             Task {
                 let image = try await imageDownloader.loadAnimatedImage(from: status.account.avatar)
@@ -188,13 +223,14 @@ extension FeedContentViewController {
         .init { [unowned self] cell, indexPath, itemIdentifier in
             cell.itemIdentifier = itemIdentifier
             cell.delegate = self
+            cell.layoutInvalidationDelegate = self
             
             let status = configuration.statuses[indexPath.item]
             let headerContentConfiguration = PostHeaderStackView.ContentConfiguration(
                 displayName: status.account.displayName,
                 time: relativeDateTimeFormatter.string(for: status.createdAt)!,
                 username: status.account.username,
-                eyeHidden: true
+                eyeHidden: !status.sensitive
             )
             let buttonsConfiguration = PostButtonsStackView.Configuration(
                 repliesCount: status.repliesCount,
@@ -204,18 +240,36 @@ extension FeedContentViewController {
             )
             
             let video = status.mediaAttachments.first!
+            let previewAspectRatio = video.meta.original.width / video.meta.original.height
             let videoPreviewViewConfiguration = VideoPreviewView.PreparationConfiguration(
                 videoDuration: video.meta.original.duration!, 
-                previewAspectRatio: video.meta.original.width / video.meta.original.height
+                previewAspectRatio: previewAspectRatio
             )
             
             var configuration = VideoPreviewPostCollectionViewCell.Configuration(
                 headerConfiguration: headerContentConfiguration,
                 content: status.content,
                 videoPreviewViewConfiguration: videoPreviewViewConfiguration,
+                spoilerConfiguration: status.sensitive ? SpoilerView.Configuration(
+                    text: status.spoilerText,
+                    imageAttachmentMosaicStackViewConfiguration: ImageAttachmentMosaicStackView.PreparationConfiguration(singleImageAspectRatio: previewAspectRatio, imagesCount: 1)
+                ) : nil,
                 buttonsConfiguration: buttonsConfiguration
             )
             cell.configuration = configuration
+            
+            if status.sensitive {
+                Task {
+                    let image: UIImage? = if let blurHash = video.blurHash {
+                        UIImage(blurHash: blurHash, size: CGSize(width: video.meta.small.width, height: video.meta.small.height))
+                    } else {
+                        nil
+                    }
+                    guard cell.itemIdentifier as? ItemIdentifier == itemIdentifier else { return }
+                    configuration.spoilerConfiguration?.imageAttachmentMosaicStackViewConfiguration = ImageAttachmentMosaicStackView.ContentConfiguration(images: [image])
+                    cell.configuration = configuration
+                }
+            }
             
             Task {
                 let image = try await imageDownloader.loadAnimatedImage(from: status.account.avatar)
@@ -341,5 +395,19 @@ extension FeedContentViewController: ImageAnimationTransitioningDelegate {
     func didTransitionItem() {
         guard let selectionItem else { return }
         selectionItem.view.alpha = 1.0
+    }
+}
+
+extension FeedContentViewController: LayoutInvalidationDelegate {
+    
+    func invalidateLayout(_ cell: UICollectionViewCell) {
+        let context = UICollectionViewLayoutInvalidationContext()
+        context.invalidateItems(at: [collectionView.indexPath(for: cell)!])
+        collectionView.collectionViewLayout.invalidateLayout(with: context)
+        let animator = UIViewPropertyAnimator(duration: 0.0, timingParameters: UISpringTimingParameters(dampingRatio: 0.825, frequencyResponse: 0.3))
+        animator.addAnimations { [collectionView] in
+            collectionView.layoutIfNeeded()
+        }
+        animator.startAnimation()
     }
 }

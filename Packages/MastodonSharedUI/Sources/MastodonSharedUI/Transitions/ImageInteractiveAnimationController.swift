@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import UIKitUtilities
 
 @MainActor
 public final class ImageInteractiveAnimationController: NSObject {

@@ -14,6 +14,10 @@ public struct Status: Sendable, Decodable, Identifiable {
     
     public let createdAt: Date
     
+    public let sensitive: Bool
+    
+    public let spoilerText: String
+    
     public let repliesCount: Int
     
     public let reblogsCount: Int
@@ -40,6 +44,10 @@ extension Status {
         case id
         
         case createdAt = "created_at"
+        
+        case sensitive
+        
+        case spoilerText = "spoiler_text"
         
         case repliesCount = "replies_count"
         

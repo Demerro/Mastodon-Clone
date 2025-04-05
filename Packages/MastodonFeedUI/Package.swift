@@ -13,7 +13,6 @@ let package = Package(
             targets: ["MastodonFeedUI"]),
     ],
     dependencies: [
-        .package(path: "UIKitFoundation"),
         .package(path: "MastodonUtilities"),
         .package(path: "MastodonSharedUI"),
         .package(path: "MastodonFeedDomain"),
@@ -24,7 +23,6 @@ let package = Package(
         .target(
             name: "MastodonFeedUI",
             dependencies: [
-                "UIKitFoundation",
                 "MastodonUtilities",
                 "MastodonSharedUI",
                 "MastodonFeedDomain",

@@ -16,5 +16,6 @@ public final class FeedFlowController: NavigationController {
     public init() {
         super.init(rootViewController: feedContainerViewController)
         tabBarItem = UITabBarItem(title: nil, image: UIImage(systemName: "house")!, selectedImage: UIImage(systemName: "house.fill")!)
+        navigationBar.prefersLargeTitles = true
     }
 }

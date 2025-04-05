@@ -36,6 +36,7 @@ final class FeedContainerViewController: ViewController {
     
     override func setupCommon() {
         super.setupCommon()
+        title = "Feed"
         emptyViewController.delegate = self
         contentViewController.delegate = self
         fetchFeed()
@@ -48,7 +49,7 @@ extension FeedContainerViewController {
         switchStateViewController(to: loadingViewController)
         Task {
             do {
-                let request = AccountStatusesRequest(networkService: .api, instanceHost: "mastodon.social", accessToken: "", accountID: "")
+                let request = AccountStatusesRequest(networkService: .api, instanceHost: "mastodon.social", accessToken: "SJzgmWQDDp8MtTp7yxAd5_taoVtqj40zGRrM871tWuk", accountID: "113520982452809377")
                 let statuses = try await withThrowingTaskGroup(of: Status.self) { taskGroup in
                     let statuses = try await request.response()
                     for var status in statuses {
@@ -66,6 +67,7 @@ extension FeedContainerViewController {
                 }
                 contentViewController.configuration = .init(statuses: statuses)
                 switchStateViewController(to: contentViewController)
+                setContentScrollView(contentViewController.collectionView)
             } catch {
                 switchStateViewController(to: emptyViewController)
             }

@@ -7,7 +7,6 @@
 
 import UIKit
 import UIKitFoundation
-import UIKitUtilities
 
 @MainActor
 public protocol PostHeaderStackViewDelegate: AnyObject {
@@ -48,12 +47,11 @@ public final class PostHeaderStackView: StackView {
     
     private let eyeButton: UIButton = {
         var configuration = UIButton.Configuration.plain()
-        configuration.image = UIImage(systemName: "eye.slash.fill")
+        configuration.image = UIImage(systemName: "eye.fill")
         configuration.baseForegroundColor = .secondaryLabel
         
         let button = UIButton(configuration: configuration)
         button.isHidden = true
-        if #available(iOS 17.0, *) { button.isSymbolAnimationEnabled = true }
         return button
     }()
     
@@ -63,7 +61,6 @@ public final class PostHeaderStackView: StackView {
         configuration.baseForegroundColor = .secondaryLabel
         
         let button = UIButton(configuration: configuration)
-        if #available(iOS 17.0, *) { button.isSymbolAnimationEnabled = true }
         return button
     }()
     
@@ -94,10 +91,13 @@ public final class PostHeaderStackView: StackView {
         addArrangedSubview(verticalStackView)
         
         eyeButton.addAction(UIAction { [unowned self] _ in
-            eyeButton.configuration!.image = eyeButtonToggled ? UIImage(systemName: "eye.slash.fill") : UIImage(systemName: "eye.fill")
-            eyeButtonToggled.toggle()
+            toggleEye()
             delegate?.postHeaderStackViewDidTapEyeButton(self)
         }, for: .touchUpInside)
+        
+        RunLoop.current.add(Timer(timeInterval: 0.0, repeats: false) { [self] _ in
+            MainActor.assumeIsolated { avatarImageView.layer.cornerRadius = avatarImageView.frame.width / 4.0 }
+        }, forMode: .common)
     }
     
     public override func setupConstraints() {
@@ -108,13 +108,6 @@ public final class PostHeaderStackView: StackView {
         ])
     }
     
-    public override func setupAfterLayoutSubviews() {
-        super.setupAfterLayoutSubviews()
-        RunLoop.current.add(Timer(timeInterval: 0.0, repeats: false) { [self] _ in
-            MainActor.assumeIsolated { avatarImageView.layer.cornerRadius = avatarImageView.frame.width / 4.0 }
-        }, forMode: .common)
-    }
-    
     public override func updateConstraints() {
         applyConfigurationIfNeeded()
         super.updateConstraints()
@@ -122,6 +115,14 @@ public final class PostHeaderStackView: StackView {
     
     deinit {
         resizingTask?.cancel()
+    }
+}
+
+extension PostHeaderStackView {
+    
+    public func toggleEye() {
+        eyeButton.configuration?.image = eyeButtonToggled ? UIImage(systemName: "eye.fill") : UIImage(systemName: "eye.slash.fill")
+        eyeButtonToggled.toggle()
     }
 }
 
