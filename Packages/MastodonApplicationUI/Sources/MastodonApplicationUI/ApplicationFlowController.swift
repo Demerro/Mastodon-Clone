@@ -7,9 +7,9 @@
 
 import UIKit
 import UIKitFoundation
-import AuthorizationUI
 import MastodonMainUI
-import AuthorizationDomain
+import MastodonAuthorizationUI
+import MastodonKit
 
 public final class ApplicationFlowController: ViewController {
     
@@ -19,7 +19,7 @@ public final class ApplicationFlowController: ViewController {
     
     public override func setupCommon() {
         super.setupCommon()
-        if AuthorizationService.isAuthorized {
+        if AuthorizationService.shared.isAuthorized {
             mainFlowController.willMove(toParent: self)
             view.addSubview(mainFlowController.view)
             addChild(mainFlowController)
@@ -33,7 +33,7 @@ public final class ApplicationFlowController: ViewController {
     
     public override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        (AuthorizationService.isAuthorized ? mainFlowController : authorizationFlowController).didMove(toParent: self)
+        (AuthorizationService.shared.isAuthorized ? mainFlowController : authorizationFlowController).didMove(toParent: self)
     }
 }
 

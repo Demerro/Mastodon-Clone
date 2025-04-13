@@ -9,7 +9,7 @@ import UIKit
 import UIKitFoundation
 import MastodonUtilities
 import MastodonSharedUI
-import MastodonFeedDomain
+import MastodonKit
 
 protocol FeedContentViewControllerDelegate: AnyObject {
     

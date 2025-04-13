@@ -15,7 +15,6 @@ let package = Package(
     dependencies: [
         .package(path: "UIKitFoundation"),
         .package(path: "MastodonAuthorizationUI"),
-        .package(path: "MastodonAuthorizationDomain"),
         .package(path: "MastodonMainUI"),
     ],
     targets: [
@@ -25,8 +24,7 @@ let package = Package(
             name: "MastodonApplicationUI",
             dependencies: [
                 .byName(name: "UIKitFoundation"),
-                .product(name: "AuthorizationUI", package: "MastodonAuthorizationUI"),
-                .product(name: "AuthorizationDomain", package: "MastodonAuthorizationDomain"),
+                .byName(name: "MastodonAuthorizationUI"),
                 .byName(name: "MastodonMainUI"),
             ]
         ),

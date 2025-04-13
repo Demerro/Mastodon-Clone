@@ -10,7 +10,6 @@ import SafariServices
 import UIKitFoundation
 import MastodonCoreUI
 import MastodonSharedUI
-import MastodonFeedDomain
 
 final class FeedContainerViewController: ViewController {
     
@@ -47,31 +46,31 @@ extension FeedContainerViewController {
     
     private func fetchFeed() {
         switchStateViewController(to: loadingViewController)
-        Task {
-            do {
-                let request = AccountStatusesRequest(networkService: .api, instanceHost: "mastodon.social", accessToken: "SJzgmWQDDp8MtTp7yxAd5_taoVtqj40zGRrM871tWuk", accountID: "113520982452809377")
-                let statuses = try await withThrowingTaskGroup(of: Status.self) { taskGroup in
-                    let statuses = try await request.response()
-                    for var status in statuses {
-                        taskGroup.addTask {
-                            guard !status.content.isEmpty else { return status }
-                            var content = try NSAttributedString(data: Data(status.content.utf8), options: [.documentType: NSAttributedString.DocumentType.html], documentAttributes: nil).string
-                            content.removeLast()
-                            status.content = content
-                            return status
-                        }
-                    }
-                    return try await taskGroup
-                        .reduce(into: [Status]()) { $0.append($1) }
-                        .sorted { $0.createdAt > $1.createdAt }
-                }
-                contentViewController.configuration = .init(statuses: statuses)
-                switchStateViewController(to: contentViewController)
-                setContentScrollView(contentViewController.collectionView)
-            } catch {
-                switchStateViewController(to: emptyViewController)
-            }
-        }
+//        Task {
+//            do {
+//                let request = AccountStatusesRequest(networkService: .api, instanceHost: "mastodon.social", accessToken: "SJzgmWQDDp8MtTp7yxAd5_taoVtqj40zGRrM871tWuk", accountID: "113520982452809377")
+//                let statuses = try await withThrowingTaskGroup(of: Status.self) { taskGroup in
+//                    let statuses = try await request.response()
+//                    for var status in statuses {
+//                        taskGroup.addTask {
+//                            guard !status.content.isEmpty else { return status }
+//                            var content = try NSAttributedString(data: Data(status.content.utf8), options: [.documentType: NSAttributedString.DocumentType.html], documentAttributes: nil).string
+//                            content.removeLast()
+//                            status.content = content
+//                            return status
+//                        }
+//                    }
+//                    return try await taskGroup
+//                        .reduce(into: [Status]()) { $0.append($1) }
+//                        .sorted { $0.createdAt > $1.createdAt }
+//                }
+//                contentViewController.configuration = .init(statuses: statuses)
+//                switchStateViewController(to: contentViewController)
+//                setContentScrollView(contentViewController.collectionView)
+//            } catch {
+//                switchStateViewController(to: emptyViewController)
+//            }
+//        }
     }
 }
 

@@ -5,10 +5,10 @@
 //  Created by Nikita Prokhorchuk on 8.12.24.
 //
 
-import Foundation.NSBundle
 import os.log
+import osUtilities
 
 extension Logger {
     
-    static let network = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "NetworkService")
+    static let network = conditionalDebugLogger(subsystem: "com.demerro.NetworkFoundation", category: "NetworkService")
 }

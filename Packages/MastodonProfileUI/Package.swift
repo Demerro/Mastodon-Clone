@@ -17,8 +17,8 @@ let package = Package(
         .package(path: "UIKitUtilities"),
         .package(path: "FoundationUtilities"),
         .package(path: "MastodonCoreUI"),
-        .package(path: "MastodonAccountsDomain"),
         .package(path: "MastodonSharedUI"),
+        .package(path: "MastodonKit"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -30,8 +30,8 @@ let package = Package(
                 .byName(name: "UIKitUtilities"),
                 .byName(name: "FoundationUtilities"),
                 .byName(name: "MastodonCoreUI"),
-                .byName(name: "MastodonAccountsDomain"),
                 .byName(name: "MastodonSharedUI"),
+                .byName(name: "MastodonKit"),
             ]
         ),
     ]

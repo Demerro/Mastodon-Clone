@@ -8,12 +8,9 @@
 import UIKit
 import UIKitFoundation
 import MastodonCoreUI
-import MastodonAccountsDomain
 import MastodonSharedUI
 
 final class ProfileContainerViewController: ViewController {
-    
-    private let profileStore = ProfileStore()
     
     let contentViewController = ProfileContentViewController()
     
@@ -46,27 +43,27 @@ extension ProfileContainerViewController {
     
     private func fetchProfile() {
         switchStateViewController(to: loadingViewController)
-        Task {
-            do {
-                guard let profile = try await profileStore.profile else { return }
-                let configuration = ProfileContentViewController.Configuration(
-                    headerURL: profile.header,
-                    avatarURL: profile.avatar,
-                    displayName: profile.displayName,
-                    username: "@\(profile.username)@\(profileStore.instanceName)",
-                    note: profile.note,
-                    postsCount: profile.statusesCount,
-                    followersCount: profile.followersCount,
-                    followingCount: profile.followingCount,
-                    creationFormattedDate: profile.createdAt,
-                    fields: []
-                )
-                contentViewController.configuration = configuration
-                switchStateViewController(to: contentViewController)
-            } catch {
-                switchStateViewController(to: emptyViewController)
-            }
-        }
+//        Task {
+//            do {
+//                guard let profile = try await profileStore.profile else { return }
+//                let configuration = ProfileContentViewController.Configuration(
+//                    headerURL: profile.header,
+//                    avatarURL: profile.avatar,
+//                    displayName: profile.displayName,
+//                    username: "@\(profile.username)@\(profileStore.instanceName)",
+//                    note: profile.note,
+//                    postsCount: profile.statusesCount,
+//                    followersCount: profile.followersCount,
+//                    followingCount: profile.followingCount,
+//                    creationFormattedDate: profile.createdAt,
+//                    fields: []
+//                )
+//                contentViewController.configuration = configuration
+//                switchStateViewController(to: contentViewController)
+//            } catch {
+//                switchStateViewController(to: emptyViewController)
+//            }
+//        }
     }
 }
 

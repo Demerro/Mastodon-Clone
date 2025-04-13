@@ -8,7 +8,7 @@
 import UIKit
 import UIKitFoundation
 import NetworkFoundation
-import MastodonAccountsDomain
+import MastodonKit
 
 @MainActor
 protocol ProfileContentViewControllerDelegate: AnyObject {

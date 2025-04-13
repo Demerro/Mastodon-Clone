@@ -15,7 +15,7 @@ let package = Package(
     dependencies: [
         .package(path: "MastodonUtilities"),
         .package(path: "MastodonSharedUI"),
-        .package(path: "MastodonFeedDomain"),
+        .package(path: "MastodonKit"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -25,7 +25,7 @@ let package = Package(
             dependencies: [
                 "MastodonUtilities",
                 "MastodonSharedUI",
-                "MastodonFeedDomain",
+                "MastodonKit"
             ]
         ),
     ],
