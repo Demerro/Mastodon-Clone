@@ -23,7 +23,7 @@ extension InstancesSearchRequest: RequestProtocol {
     func response() async throws(InstancesError) -> InstancesResponse {
         assert(!InstancesConstants.instancesSecret.isEmpty)
         
-        Logger.instances.info("Starting request for instances search")
+        Logger.instances.debug("Starting request for instances search")
         
         var urlComponents = URLComponents()
         urlComponents.scheme = "https"

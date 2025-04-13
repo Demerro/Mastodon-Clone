@@ -23,7 +23,7 @@ struct ProfileRequest {
 extension ProfileRequest: RequestProtocol {
     
     func response() async throws(Error) -> Account {
-        Logger.profile.info("Starting request for current account")
+        Logger.profile.debug("Starting request for current account")
         
         var urlComponents = URLComponents()
         urlComponents.scheme = "https"

@@ -21,7 +21,7 @@ extension InstancesListRequest: RequestProtocol {
     func response() async throws(InstancesError) -> InstancesResponse {
         assert(!InstancesConstants.instancesSecret.isEmpty)
         
-        Logger.instances.info("Starting request for instances list")
+        Logger.instances.debug("Starting request for instances list")
         
         var urlComponents = URLComponents()
         urlComponents.scheme = "https"

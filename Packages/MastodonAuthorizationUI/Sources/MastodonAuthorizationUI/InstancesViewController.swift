@@ -11,12 +11,12 @@ import MastodonUtilities
 import MastodonKit
 
 @MainActor
-package protocol InstancesViewControllerDelegate: AnyObject {
+protocol InstancesViewControllerDelegate: AnyObject {
     
     func instancesViewController(_ viewController: InstancesViewController, didSelectInstance instance: Instance)
 }
 
-package final class InstancesViewController: ViewController {
+final class InstancesViewController: ViewController {
     
     private let instancesView = InstancesView(frame: .zero)
     
@@ -32,9 +32,9 @@ package final class InstancesViewController: ViewController {
     
     private var runningTask: Task<Void, Error>?
     
-    package weak var delegate: (any InstancesViewControllerDelegate)?
+    weak var delegate: (any InstancesViewControllerDelegate)?
     
-    package override func setupCommon() {
+    override func setupCommon() {
         super.setupCommon()
         
         title = "Add account"
@@ -48,32 +48,27 @@ package final class InstancesViewController: ViewController {
         runListTask()
     }
     
-    package override func loadView() {
+    override func loadView() {
         view = instancesView
     }
     
-    package override func viewWillDisappear(_ animated: Bool) {
+    override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         runningTask?.cancel()
         runningTask = nil
-    }
-    
-    package override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        imageDownloader.clearCache()
     }
 }
 
 extension InstancesViewController {
     
-    private func makeShimmerRegistration() -> UICollectionView.CellRegistration<InstanceCollectionViewCell<Item>, Item> {
+    private func makeShimmerRegistration() -> UICollectionView.CellRegistration<InstanceCollectionViewCell<ItemIdentifier>, ItemIdentifier> {
         .init { cell, indexPath, itemIdentifier in
             cell.isShimmering = true
             cell.contentConfiguration = cell.shimmerContentConfiguration()
         }
     }
     
-    private func makeCellRegistration() -> UICollectionView.CellRegistration<InstanceCollectionViewCell<Item>, Item> {
+    private func makeCellRegistration() -> UICollectionView.CellRegistration<InstanceCollectionViewCell<ItemIdentifier>, ItemIdentifier> {
         .init { [unowned self] cell, indexPath, itemIdentifier in
             cell.itemIdentifier = itemIdentifier
             cell.isShimmering = false
@@ -87,18 +82,14 @@ extension InstancesViewController {
             guard let url = item.thumbnailURL else { return }
             Task {
                 let image = try? await imageDownloader.loadImage(from: url)
-                guard cell.itemIdentifier == itemIdentifier,
-                      var configuration = cell.contentConfiguration as? InstanceContentView.Configuration
-                else {
-                    return
-                }
+                guard cell.itemIdentifier == itemIdentifier else { return }
                 configuration.image = image
                 cell.contentConfiguration = configuration
             }
         }
     }
     
-    private func makeDataSource() -> UICollectionViewDiffableDataSource<Section, Item> {
+    private func makeDataSource() -> UICollectionViewDiffableDataSource<Section, ItemIdentifier> {
         let shimmerRegistration = makeShimmerRegistration()
         let cellRegistration = makeCellRegistration()
         return .init(collectionView: instancesView.collectionView) { [unowned self] collectionView, indexPath, itemIdentifier in
@@ -115,7 +106,7 @@ extension InstancesViewController {
     
     private func setupShimmerSnapshot() async {
         isShimmering = true; defer { isShimmering = false }
-        var snapshot = NSDiffableDataSourceSnapshot<Section, Item>()
+        var snapshot = NSDiffableDataSourceSnapshot<Section, ItemIdentifier>()
         snapshot.appendSections([.main])
         snapshot.appendItems((0..<3).map { _ in UUID().uuidString })
         await dataSource.applySnapshotUsingReloadData(snapshot)
@@ -123,7 +114,7 @@ extension InstancesViewController {
     }
     
     private func updateSnapshot(with items: [String]) async {
-        var snapshot = NSDiffableDataSourceSnapshot<Section, Item>()
+        var snapshot = NSDiffableDataSourceSnapshot<Section, ItemIdentifier>()
         snapshot.appendSections([.main])
         snapshot.appendItems(items, toSection: .main)
         await dataSource.applySnapshotUsingReloadData(snapshot)
@@ -142,7 +133,7 @@ extension InstancesViewController {
         case main
     }
     
-    private typealias Item = Instance.ID
+    private typealias ItemIdentifier = Instance.ID
 }
 
 extension InstancesViewController {
@@ -194,48 +185,46 @@ extension InstancesViewController {
 
 extension InstancesViewController: UICollectionViewDelegate {
     
-    package func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         collectionView.deselectItem(at: indexPath, animated: false)
         delegate?.instancesViewController(self, didSelectInstance: instancesStore.instances[indexPath.item])
     }
     
-    package func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
         searchController.searchBar.endEditing(true)
     }
 }
 
 extension InstancesViewController: UICollectionViewDataSourcePrefetching {
     
-    package func collectionView(_ collectionView: UICollectionView, prefetchItemsAt indexPaths: [IndexPath]) {
+    func collectionView(_ collectionView: UICollectionView, prefetchItemsAt indexPaths: [IndexPath]) {
         for indexPath in indexPaths {
             guard let url = instancesStore.instances[indexPath.item].thumbnailURL else { continue }
             Task {
-                try? await imageDownloader.loadImage(from: url)
+                try await imageDownloader.loadImage(from: url)
             }
         }
     }
     
-    package func collectionView(_ collectionView: UICollectionView, cancelPrefetchingForItemsAt indexPaths: [IndexPath]) {
+    func collectionView(_ collectionView: UICollectionView, cancelPrefetchingForItemsAt indexPaths: [IndexPath]) {
         for indexPath in indexPaths {
-            guard let url = instancesStore.instances[indexPath.item].thumbnailURL,
-                  case let .inProgress(task) = imageDownloader.cache[url]
-            else { continue }
-            task.cancel()
+            guard let url = instancesStore.instances[indexPath.item].thumbnailURL else { continue }
+            imageDownloader.cancelDownloadingIfNeeded(for: url)
         }
     }
 }
 
 extension InstancesViewController: UISearchBarDelegate {
     
-    package func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         runSearchTask()
     }
     
-    package func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         runSearchTask()
     }
     
-    package func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
         runListTask()
     }
 }

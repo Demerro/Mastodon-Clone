@@ -51,11 +51,6 @@ final class FeedContentViewController: ViewController {
     override func loadView() {
         view = collectionView
     }
-    
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        imageDownloader.clearCache()
-    }
 }
 
 extension FeedContentViewController {

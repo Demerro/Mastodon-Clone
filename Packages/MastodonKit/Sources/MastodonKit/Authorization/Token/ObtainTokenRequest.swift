@@ -23,7 +23,7 @@ struct ObtainTokenRequest {
 extension ObtainTokenRequest: RequestProtocol {
     
     func response() async throws(Error) -> ObtainTokenResponse {
-        Logger.authorization.info("Starting request for token")
+        Logger.authorization.debug("Starting request for token")
         
         var urlComponents = URLComponents()
         urlComponents.scheme = "https"

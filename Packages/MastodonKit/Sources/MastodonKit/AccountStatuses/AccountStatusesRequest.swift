@@ -41,7 +41,7 @@ public struct AccountStatusesRequest {
 extension AccountStatusesRequest: RequestProtocol {
     
     public func response() async throws(Error) -> [Status] {
-        Logger.accountStatuses.info("Starting request for account(id: \(accountID) statuses")
+        Logger.accountStatuses.debug("Starting request for account(id: \(accountID) statuses")
         
         var urlComponents = URLComponents()
         urlComponents.scheme = "https"

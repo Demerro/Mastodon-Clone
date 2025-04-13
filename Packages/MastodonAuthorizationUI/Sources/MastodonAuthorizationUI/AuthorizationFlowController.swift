@@ -31,7 +31,7 @@ public final class AuthorizationFlowController: NavigationController {
 
 extension AuthorizationFlowController: InstancesViewControllerDelegate {
     
-    package func instancesViewController(_ viewController: InstancesViewController, didSelectInstance instance: Instance) {
+     func instancesViewController(_ viewController: InstancesViewController, didSelectInstance instance: Instance) {
         let url = AuthorizationService.shared.makeAuthorizationURL(instanceName: instance.name)
         let session = AuthorizationService.shared.makeWebAuthenticationSession(url: url) { [self] in
             flowDelegate?.authorizationFlowControllerDidFinish(self)

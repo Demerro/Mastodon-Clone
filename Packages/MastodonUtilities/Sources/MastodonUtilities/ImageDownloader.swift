@@ -6,13 +6,15 @@
 //
 
 import UIKit
+import os.log
 import NetworkFoundation
 import MastodonCoreUI
+import osUtilities
 
 @MainActor
 public final class ImageDownloader {
 
-    private(set) public var cache = [URL: CacheEntry]()
+    private let cache = NSCache<NSURL, CacheEntryWrapper>()
     
     public init() {
     }
@@ -33,35 +35,41 @@ extension ImageDownloader {
 
 extension ImageDownloader {
     
-    public func clearCache() {
-        cache.removeAll()
-    }
-}
-
-extension ImageDownloader {
-    
     private func loadImageData(from url: URL) async throws -> Data {
-        if let cached = cache[url] {
-            return switch cached {
+        let nsURL = url as NSURL
+        
+        Logger.imageDownloader.debug("Attempting to load image data for URL: \(url.absoluteString)")
+        
+        if let cacheEntryWrapper = cache.object(forKey: nsURL) {
+            Logger.imageDownloader.debug("Cache hit for URL: \(url.absoluteString)")
+            
+            switch cacheEntryWrapper.entry {
             case .ready(let data):
-                data
+                Logger.imageDownloader.info("Cache entry is ready for URL: \(url.absoluteString)")
+                return data
             case .inProgress(let task):
-                try await task.value
+                Logger.imageDownloader.info("Cache entry is in-progress for URL: \(url.absoluteString), awaiting task result")
+                return try await task.value
             }
         }
         
+        Logger.imageDownloader.debug("Cache miss for URL: \(url.absoluteString), starting download task")
+        
         let task = Task {
-            try await NetworkService.imageDownload.data(for: URLRequest(url: url))
+            Logger.imageDownloader.debug("Started download task for URL: \(url.absoluteString)")
+            return try await NetworkService.imageDownload.data(for: URLRequest(url: url))
         }
         
-        cache[url] = .inProgress(task)
+        cache.setObject(CacheEntryWrapper(entry: .inProgress(task)), forKey: nsURL)
         
         do {
             let data = try await task.value
-            cache[url] = .ready(data)
+            Logger.imageDownloader.info("Successfully downloaded data for URL: \(url.absoluteString), caching the result")
+            cache.setObject(CacheEntryWrapper(entry: .ready(data)), forKey: nsURL)
             return data
         } catch {
-            cache[url] = nil
+            Logger.imageDownloader.error("Failed to download data for URL: \(url.absoluteString). Error: \(error)")
+            cache.removeObject(forKey: nsURL)
             throw error
         }
     }
@@ -69,10 +77,34 @@ extension ImageDownloader {
 
 extension ImageDownloader {
     
-    public enum CacheEntry: Sendable {
+    public func cancelDownloadingIfNeeded(for url: URL) {
+        if case let .inProgress(task) = cache.object(forKey: url as NSURL)?.entry {
+            task.cancel()
+            Logger.imageDownloader.info("Cancel downloading for URL: \(url.absoluteString)")
+        }
+    }
+}
+
+extension ImageDownloader {
+    
+    fileprivate enum CacheEntry: Sendable {
         
         case inProgress(Task<Data, Error>)
         
         case ready(Data)
     }
+    
+    fileprivate final class CacheEntryWrapper {
+        
+        let entry: CacheEntry
+        
+        init(entry: CacheEntry) {
+            self.entry = entry
+        }
+    }
+}
+
+extension Logger {
+    
+    fileprivate static let imageDownloader = conditionalDebugLogger(subsystem: "com.demerro.MastodonUtilities", category: "ImageDownloader")
 }
