@@ -25,21 +25,21 @@
 		69A2781C2CF235980058CD2F /* Exceptions for "Packages" folder in "Mastodon-Clone" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				FoundationUtilities,
+				Foundation/UIKitFoundation,
 				MastodonApplicationDelegate,
-				MastodonApplicationUI,
-				MastodonAuthorizationUI,
-				MastodonCoreUI,
-				MastodonFeedUI,
 				MastodonKit,
-				MastodonMainUI,
-				MastodonProfileUI,
-				MastodonSharedUI,
-				MastodonUtilities,
-				osUtilities,
-				SwiftUtilities,
-				UIKitFoundation,
-				UIKitUtilities,
+				UI/MastodonApplicationUI,
+				UI/MastodonAuthorizationUI,
+				UI/MastodonCoreUI,
+				UI/MastodonFeedUI,
+				UI/MastodonMainUI,
+				UI/MastodonProfileUI,
+				UI/MastodonSharedUI,
+				Utilities/FoundationUtilities,
+				Utilities/MastodonUtilities,
+				Utilities/osUtilities,
+				Utilities/SwiftUtilities,
+				Utilities/UIKitUtilities,
 			);
 			target = 69A277ED2CF232400058CD2F /* Mastodon-Clone */;
 		};
