@@ -10,5 +10,5 @@ import osUtilities
 
 extension Logger {
     
-    static let network = conditionalDebugLogger(subsystem: "com.demerro.NetworkFoundation", category: "NetworkService")
+    static let network = Logger(subsystem: "com.demerro.NetworkFoundation", category: "NetworkService", flag: "Debug")
 }

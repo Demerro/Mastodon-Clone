@@ -10,5 +10,5 @@ import osUtilities
 
 extension Logger {
     
-    static let accountStatuses = conditionalDebugLogger(subsystem: subsystem, category: "AccountStatuses")
+    static let accountStatuses = Logger(subsystem: subsystem, category: "AccountStatuses", flag: "Debug")
 }

@@ -10,5 +10,5 @@ import osUtilities
 
 extension Logger {
     
-    static let authorization = conditionalDebugLogger(subsystem: subsystem, category: "Authorization")
+    static let authorization = Logger(subsystem: subsystem, category: "Authorization", flag: "Debug")
 }

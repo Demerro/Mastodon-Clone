@@ -10,5 +10,5 @@ import osUtilities
 
 extension Logger {
     
-    static let profile = conditionalDebugLogger(subsystem: subsystem, category: "Profile")
+    static let profile = Logger(subsystem: subsystem, category: "Profile", flag: "Debug")
 }

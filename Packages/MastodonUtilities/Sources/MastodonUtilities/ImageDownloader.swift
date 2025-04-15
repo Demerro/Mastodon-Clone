@@ -106,5 +106,5 @@ extension ImageDownloader {
 
 extension Logger {
     
-    fileprivate static let imageDownloader = conditionalDebugLogger(subsystem: "com.demerro.MastodonUtilities", category: "ImageDownloader")
+    fileprivate static let imageDownloader = Logger(subsystem: "com.demerro.MastodonUtilities", category: "ImageDownloader", flag: "Debug")
 }

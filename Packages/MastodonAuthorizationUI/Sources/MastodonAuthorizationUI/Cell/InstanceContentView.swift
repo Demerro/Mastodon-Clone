@@ -16,6 +16,8 @@ final class InstanceContentView: View, UIContentView {
     
     private var nameLabelBottomConstraint: NSLayoutConstraint!
     
+    private var resizingTask: Task<Void, Never>?
+    
     private let imageView: UIImageView = {
         $0.translatesAutoresizingMaskIntoConstraints = false
         $0.contentMode = .scaleAspectFill
@@ -114,11 +116,16 @@ extension InstanceContentView {
         guard configuration != appliedConfiguration else { return }
         appliedConfiguration = configuration
         
+        resizingTask?.cancel()
+        
         if let cgImage = configuration.image?.cgImage {
-            let image = UIImage(cgImage: cgImage, scale: traitCollection.displayScale, orientation: .up)
-            Task(priority: .high) {
+            resizingTask = Task {
+                guard !Task.isCancelled else { return }
+                let image = UIImage(cgImage: cgImage, scale: traitCollection.displayScale, orientation: .up)
                 let thumbnailImage = await image.byPreparingThumbnail(ofSize: imageView.bounds.size)
+                guard !Task.isCancelled else { return }
                 let resultImage = await thumbnailImage?.byPreparingForDisplay()
+                guard !Task.isCancelled else { return }
                 UIView.transition(with: imageView, duration: CATransaction.animationDuration(), options: .transitionCrossDissolve) { [self] in
                     imageView.image = resultImage
                 }
