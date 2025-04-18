@@ -10,7 +10,7 @@ import UIKitUtilities
 
 final class VideoPreviewPostCollectionViewCellLayoutManager {
     
-    private var constraint: NSLayoutConstraint?
+    private var oldConstraints = [NSLayoutConstraint]()
     
     var isSpoilerVisible = false
     
@@ -60,9 +60,11 @@ extension VideoPreviewPostCollectionViewCellLayoutManager {
         cell.contentTextView.isHidden = true
         cell.videoPreviewView.isHidden = true
         
-        if let constraint { NSLayoutConstraint.deactivate([constraint]) }
-        constraint = cell.buttonsStackView.topAnchor.constraint(equalToSystemSpacingBelow: cell.spoilerView.bottomAnchor, multiplier: 1.0)
-        NSLayoutConstraint.activate([constraint!])
+        
+        let constraints = [cell.buttonsStackView.topAnchor.constraint(equalToSystemSpacingBelow: cell.spoilerView.bottomAnchor, multiplier: 1.0)]
+        NSLayoutConstraint.deactivate(oldConstraints)
+        NSLayoutConstraint.activate(constraints)
+        oldConstraints = constraints
     }
     
     private func layoutContent() {
@@ -70,12 +72,14 @@ extension VideoPreviewPostCollectionViewCellLayoutManager {
         cell.contentTextView.isHidden = cell.configuration?.content.isEmpty ?? true
         cell.videoPreviewView.isHidden = false
         
-        if let constraint { NSLayoutConstraint.deactivate([constraint]) }
-        constraint = if cell.configuration?.content.isEmpty ?? true {
-            cell.videoPreviewView.topAnchor.constraint(equalToSystemSpacingBelow: cell.headerStackView.bottomAnchor, multiplier: 1.0)
+        let constraints = if cell.configuration?.content.isEmpty ?? true {
+            [cell.videoPreviewView.topAnchor.constraint(equalToSystemSpacingBelow: cell.headerStackView.bottomAnchor, multiplier: 1.0)]
         } else {
-            cell.contentTextView.topAnchor.constraint(equalToSystemSpacingBelow: cell.headerStackView.bottomAnchor, multiplier: 1.0)
+            [cell.contentTextView.topAnchor.constraint(equalToSystemSpacingBelow: cell.headerStackView.bottomAnchor, multiplier: 1.0),
+             cell.videoPreviewView.topAnchor.constraint(equalToSystemSpacingBelow: cell.contentTextView.bottomAnchor, multiplier: 1.0)]
         }
-        NSLayoutConstraint.activate([constraint!])
+        NSLayoutConstraint.deactivate(oldConstraints)
+        NSLayoutConstraint.activate(constraints)
+        oldConstraints = constraints
     }
 }

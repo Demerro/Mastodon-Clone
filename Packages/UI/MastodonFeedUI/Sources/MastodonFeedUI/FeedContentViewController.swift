@@ -73,7 +73,9 @@ extension FeedContentViewController {
         snapshot.appendItems(configuration.statuses.map(\.id))
         if configuration.reloadData {
             dataSource.applySnapshotUsingReloadData(snapshot)
-            collectionView.scrollToItem(at: [0, 0], at: .top, animated: false)
+            if !configuration.statuses.isEmpty {
+                collectionView.scrollToItem(at: [0, 0], at: .top, animated: false)
+            }
         } else {
             dataSource.applySnapshotUsingReloadData(snapshot)
         }
