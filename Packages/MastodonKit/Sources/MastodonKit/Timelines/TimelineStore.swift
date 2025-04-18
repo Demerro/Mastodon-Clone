@@ -84,8 +84,7 @@ extension TimelineStore {
 extension TimelineStore {
     
     private func parseHTMLContentAndSortStatuses(_ statuses: [Status]) async throws(Swift.Error) -> [Status] {
-        print(#function)
-        return try await withThrowingTaskGroup(of: Status.self) { taskGroup in
+        try await withThrowingTaskGroup(of: Status.self) { taskGroup in
             for var status in statuses {
                 taskGroup.addTask {
                     guard !status.content.isEmpty else { return status }
