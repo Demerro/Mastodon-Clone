@@ -121,9 +121,15 @@ extension ImageAttachmentMosaicStackView {
                 guard let self else { return [Int: UIImage?]() }
                 for (index, imageView) in imageViews.enumerated() {
                     taskGroup.addTask {
-                        guard let cgImage = configuration.images[index]?.cgImage else { return (index, nil) }
+                        guard let cgImage = configuration.images[index]?.cgImage,
+                              !Task.isCancelled
+                        else {
+                            return (index, nil)
+                        }
                         let image = await UIImage(cgImage: cgImage, scale: self.traitCollection.displayScale, orientation: .up)
+                        guard !Task.isCancelled else { return (index, nil) }
                         let thumbnailImage = await image.byPreparingThumbnail(ofSize: imageView.frame.size)
+                        guard !Task.isCancelled else { return (index, nil) }
                         return (index, await thumbnailImage?.byPreparingForDisplay())
                     }
                 }

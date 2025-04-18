@@ -155,13 +155,17 @@ extension PreviewCardView {
     
     private func apply(imageConfiguration: ImageConfiguration) {
         resizingTask?.cancel()
+        guard let cgImage = imageConfiguration.image?.cgImage else {
+            imageView.image = nil
+            return
+        }
         resizingTask = Task {
-            guard let cgImage = imageConfiguration.image?.cgImage else {
-                imageView.image = nil
-                return
-            }
-            let thumbnailImage = await UIImage(cgImage: cgImage, scale: traitCollection.displayScale, orientation: .up).byPreparingThumbnail(ofSize: imageView.bounds.size)
+            guard !Task.isCancelled else { return }
+            let image = UIImage(cgImage: cgImage, scale: traitCollection.displayScale, orientation: .up)
+            let thumbnailImage = await image.byPreparingThumbnail(ofSize: imageView.bounds.size)
+            guard !Task.isCancelled else { return }
             guard let resultImage = await thumbnailImage?.byPreparingForDisplay() else { return }
+            guard !Task.isCancelled else { return }
             UIView.transition(with: imageView, duration: CATransaction.animationDuration(), options: .transitionCrossDissolve) {
                 self.imageView.image = resultImage
             }

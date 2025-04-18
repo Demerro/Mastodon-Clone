@@ -64,8 +64,6 @@ public final class PostHeaderStackView: StackView {
         return button
     }()
     
-    private var resizingTask: Task<Void, Never>?
-    
     private var needsApplyConfiguration = false
     
     public var configuration: Configuration? {
@@ -112,10 +110,6 @@ public final class PostHeaderStackView: StackView {
         applyConfigurationIfNeeded()
         super.updateConstraints()
     }
-    
-    deinit {
-        resizingTask?.cancel()
-    }
 }
 
 extension PostHeaderStackView {
@@ -151,15 +145,12 @@ extension PostHeaderStackView {
     }
     
     private func apply(imageConfiguration: ImageConfiguration) {
-        resizingTask?.cancel()
-        resizingTask = Task {
-            guard let avatarImage = imageConfiguration.avatarImage else {
-                avatarImageView.image = nil
-                return
+        if let avatarImage = imageConfiguration.avatarImage {
+            UIView.transition(with: avatarImageView, duration: CATransaction.animationDuration()) { [self] in
+                avatarImageView.image = avatarImage
             }
-            UIView.transition(with: avatarImageView, duration: CATransaction.animationDuration(), options: .transitionCrossDissolve) {
-                self.avatarImageView.image = avatarImage
-            }
+        } else {
+            avatarImageView.image = nil
         }
     }
 }

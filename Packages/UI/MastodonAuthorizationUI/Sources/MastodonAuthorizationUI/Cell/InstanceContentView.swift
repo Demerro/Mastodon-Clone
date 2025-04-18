@@ -69,6 +69,10 @@ final class InstanceContentView: View, UIContentView {
         apply(configuration: configuration)
     }
     
+    deinit {
+        resizingTask?.cancel()
+    }
+    
     override func setupCommon() {
         super.setupCommon()
         addSubview(imageView)

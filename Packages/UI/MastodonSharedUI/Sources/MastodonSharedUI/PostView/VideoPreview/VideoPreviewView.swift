@@ -141,18 +141,20 @@ extension VideoPreviewView {
     
     private func apply(contentConfiguration configuration: ContentConfiguration) {
         resizingTask?.cancel()
-        resizingTask = Task {
-            guard let cgImage = configuration.previewImage?.cgImage else {
-                imageView.image = nil
-                return
-            }
-            Task {
-                let thumbnailImage = await UIImage(cgImage: cgImage, scale: traitCollection.displayScale, orientation: .up).byPreparingThumbnail(ofSize: imageView.bounds.size)
-                guard let resultImage = await thumbnailImage?.byPreparingForDisplay() else { return }
+        if let cgImage = configuration.previewImage?.cgImage {
+            resizingTask = Task {
+                guard !Task.isCancelled else { return }
+                let image = UIImage(cgImage: cgImage, scale: traitCollection.displayScale, orientation: .up)
+                let thumbnailImage = await image.byPreparingThumbnail(ofSize: imageView.bounds.size)
+                guard !Task.isCancelled else { return }
+                let resultImage = await thumbnailImage?.byPreparingForDisplay()
+                guard !Task.isCancelled else { return }
                 UIView.transition(with: imageView, duration: CATransaction.animationDuration(), options: .transitionCrossDissolve) {
                     self.imageView.image = resultImage
                 }
             }
+        } else {
+            imageView.image = nil
         }
     }
 }
