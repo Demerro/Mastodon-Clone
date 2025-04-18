@@ -9,6 +9,7 @@ import UIKit
 import UIKitFoundation
 import UIKitUtilities
 
+@MainActor
 public protocol TextPostCollectionViewCellDelegate: AnyObject {
     
     func textPostCollectionViewCell(_ cell: TextPostCollectionViewCell, didSelectURL url: URL)

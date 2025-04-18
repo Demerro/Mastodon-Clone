@@ -40,42 +40,6 @@ public struct Account {
     public let bot: Bool
     
     public let fields: [Field]
-    
-    public init(
-        id: String,
-        username: String,
-        acct: String,
-        displayName: String,
-        note: String,
-        avatar: URL,
-        avatarStatic: URL,
-        header: URL,
-        headerStatic: URL,
-        locked: Bool,
-        createdAt: String,
-        statusesCount: Int,
-        followersCount: Int,
-        followingCount: Int,
-        bot: Bool,
-        fields: [Field]
-    ) {
-        self.id = id
-        self.username = username
-        self.acct = acct
-        self.displayName = displayName
-        self.note = note
-        self.avatar = avatar
-        self.avatarStatic = avatarStatic
-        self.header = header
-        self.headerStatic = headerStatic
-        self.locked = locked
-        self.createdAt = createdAt
-        self.statusesCount = statusesCount
-        self.followersCount = followersCount
-        self.followingCount = followingCount
-        self.bot = bot
-        self.fields = fields
-    }
 }
 
 extension Account {

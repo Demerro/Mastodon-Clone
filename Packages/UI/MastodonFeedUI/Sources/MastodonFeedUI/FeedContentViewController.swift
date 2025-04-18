@@ -11,6 +11,7 @@ import MastodonUtilities
 import MastodonSharedUI
 import MastodonKit
 
+@MainActor
 protocol FeedContentViewControllerDelegate: AnyObject {
     
     func feedContentViewController(_ viewController: FeedContentViewController, didSelectImage image: UIImage)
@@ -18,6 +19,10 @@ protocol FeedContentViewControllerDelegate: AnyObject {
     func feedContentViewController(_ viewController: FeedContentViewController, didSelectVideoWithURL url: URL, previewImage image: UIImage)
     
     func feedContentViewController(_ viewController: FeedContentViewController, didSelectURL url: URL)
+    
+    func feedContentViewControllerDidRefresh(_ viewController: FeedContentViewController)
+    
+    func feedContentViewControllerDidPagination(_ viewController: FeedContentViewController)
 }
 
 final class FeedContentViewController: ViewController {
@@ -40,13 +45,20 @@ final class FeedContentViewController: ViewController {
     
     private lazy var dataSource = makeDataSource()
     
-    var configuration: Configuration = Configuration(statuses: []) {
+    var configuration: Configuration = Configuration(statuses: [], reloadData: true) {
         didSet { applyConfiguration() }
     }
     
     weak var delegate: (any FeedContentViewControllerDelegate)?
     
     private var selectionItem: SelectionItem?
+    
+    override func setupCommon() {
+        collectionView.delegate = self
+        collectionView.refreshControl = UIRefreshControl(frame: .zero, primaryAction: UIAction { [unowned self] _ in
+            delegate?.feedContentViewControllerDidRefresh(self)
+        })
+    }
     
     override func loadView() {
         view = collectionView
@@ -59,7 +71,12 @@ extension FeedContentViewController {
         var snapshot = NSDiffableDataSourceSnapshot<Section, ItemIdentifier>()
         snapshot.appendSections([.main])
         snapshot.appendItems(configuration.statuses.map(\.id))
-        dataSource.applySnapshotUsingReloadData(snapshot)
+        if configuration.reloadData {
+            dataSource.applySnapshotUsingReloadData(snapshot)
+            collectionView.scrollToItem(at: [0, 0], at: .top, animated: false)
+        } else {
+            dataSource.applySnapshotUsingReloadData(snapshot)
+        }
     }
 }
 
@@ -315,6 +332,8 @@ extension FeedContentViewController {
     struct Configuration {
         
         let statuses: [Status]
+        
+        let reloadData: Bool
     }
 }
 
@@ -404,5 +423,16 @@ extension FeedContentViewController: LayoutInvalidationDelegate {
             collectionView.layoutIfNeeded()
         }
         animator.startAnimation()
+    }
+}
+
+extension FeedContentViewController: UICollectionViewDelegate {
+}
+
+extension FeedContentViewController: UIScrollViewDelegate {
+    
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        guard scrollView.contentOffset.y > scrollView.contentSize.height - scrollView.frame.height - 100.0 else { return }
+        delegate?.feedContentViewControllerDidPagination(self)
     }
 }

@@ -38,6 +38,26 @@ public struct Status: Sendable, Decodable, Identifiable {
 
 extension Status {
     
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        sensitive = try container.decode(Bool.self, forKey: .sensitive)
+        spoilerText = try container.decode(String.self, forKey: .spoilerText)
+        repliesCount = try container.decode(Int.self, forKey: .repliesCount)
+        reblogsCount = try container.decode(Int.self, forKey: .reblogsCount)
+        favouritesCount = try container.decode(Int.self, forKey: .favouritesCount)
+        favourited = try container.decodeIfPresent(Bool.self, forKey: .favourited) ?? false
+        reblogged = try container.decodeIfPresent(Bool.self, forKey: .reblogged) ?? false
+        content = try container.decode(String.self, forKey: .content)
+        account = try container.decode(Account.self, forKey: .account)
+        mediaAttachments = try container.decodeIfPresent([MediaAttachment].self, forKey: .mediaAttachments) ?? []
+        previewCard = try container.decodeIfPresent(PreviewCard.self, forKey: .previewCard)
+    }
+}
+
+extension Status {
+    
     private enum CodingKeys: String, CodingKey {
         
         case id

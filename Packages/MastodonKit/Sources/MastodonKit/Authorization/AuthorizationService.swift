@@ -21,7 +21,7 @@ extension AuthorizationService {
     public var isAuthorized: Bool {
         UserDefaults.standard.string(forKey: "instance_name")
             .map {
-                try? AuthorizationService.getAccessToken(for: $0)
+                try? getAccessToken(for: $0)
             } != nil
     }
     
@@ -41,9 +41,10 @@ extension AuthorizationService {
     }
     
     public func makeWebAuthenticationSession(url: URL, completion: (() -> Void)? = nil) -> ASWebAuthenticationSession {
-        .init(url: url, callbackURLScheme: AuthorizationConstants.callbackURLScheme) { callbackURL, error in
+        .init(url: url, callbackURLScheme: AuthorizationConstants.callbackURLScheme) { [weak self] callbackURL, error in
             guard
                 error == nil,
+                let self,
                 let callbackURL,
                 let instanceHost = url.host,
                 let urlComponents = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false),
@@ -53,7 +54,7 @@ extension AuthorizationService {
             }
             Task {
                 let accessToken = try await ObtainTokenRequest(networkService: .api, instanceHost: instanceHost, code: code).response().accessToken
-                try? Self.saveAccessToken(accessToken, for: instanceHost)
+                try? self.saveAccessToken(accessToken, for: instanceHost)
                 UserDefaults.standard.set(instanceHost, forKey: "instance_name")
                 completion?()
             }
@@ -63,7 +64,7 @@ extension AuthorizationService {
 
 extension AuthorizationService {
     
-    private static func saveAccessToken(_ accessToken: String, for instanceHost: String) throws {
+    private func saveAccessToken(_ accessToken: String, for instanceHost: String) throws {
         let query = [
             kSecClass: kSecClassGenericPassword,
             kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlock,
@@ -83,7 +84,7 @@ extension AuthorizationService {
         }
     }
     
-    public static func getAccessToken(for instanceHost: String) throws -> String? {
+    public func getAccessToken(for instanceHost: String) throws -> String? {
         let query = [
             kSecClass: kSecClassGenericPassword,
             kSecAttrAccount: instanceHost,
@@ -109,7 +110,7 @@ extension AuthorizationService {
 
 extension AuthorizationService {
     
-    public static var instanceName: String? {
+    public var instanceName: String? {
         UserDefaults.standard.string(forKey: "instance_name")
     }
 }

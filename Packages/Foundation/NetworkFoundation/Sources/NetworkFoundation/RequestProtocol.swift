@@ -13,7 +13,5 @@ public protocol RequestProtocol {
     
     associatedtype Error: Swift.Error
     
-    var jsonDecoder: JSONDecoder { get }
-    
     func response() async throws(Error) -> `Type`
 }

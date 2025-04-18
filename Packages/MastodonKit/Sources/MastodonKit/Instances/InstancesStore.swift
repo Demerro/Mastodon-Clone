@@ -16,7 +16,7 @@ public final class InstancesStore {
 
 extension InstancesStore {
     
-    public func listInstances() async throws(InstancesError) {
+    public func listInstances() async throws(MastodonError) {
         let response = try await InstancesListRequest(networkService: .api).response()
         instances = response.instances.sorted { $0.statusesCount > $1.statusesCount }
     }
@@ -24,7 +24,7 @@ extension InstancesStore {
 
 extension InstancesStore {
     
-    public func searchInstances(query: String) async throws(InstancesError) {
+    public func searchInstances(query: String) async throws(MastodonError) {
         instances = try await InstancesSearchRequest(networkService: .api, query: query).response().instances
     }
 }

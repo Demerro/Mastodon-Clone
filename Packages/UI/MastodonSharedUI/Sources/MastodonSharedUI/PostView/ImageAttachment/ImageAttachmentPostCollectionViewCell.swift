@@ -9,6 +9,7 @@ import UIKit
 import UIKitFoundation
 import UIKitUtilities
 
+@MainActor
 public protocol ImageAttachmentPostCollectionViewCellDelegate: AnyObject {
     
     func imageAttachmentPostCollectionViewCell(_ cell: ImageAttachmentPostCollectionViewCell, didSelectImageView imageView: UIImageView)

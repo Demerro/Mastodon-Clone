@@ -7,6 +7,7 @@
 
 import UIKit
 
+@MainActor
 public protocol LayoutInvalidationDelegate: AnyObject {
     
     func invalidateLayout(_ cell: UICollectionViewCell)

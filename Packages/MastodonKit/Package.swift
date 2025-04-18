@@ -26,5 +26,6 @@ let package = Package(
                 "osUtilities"
             ]
         ),
-    ]
+    ],
+    swiftLanguageModes: [.v5]
 )

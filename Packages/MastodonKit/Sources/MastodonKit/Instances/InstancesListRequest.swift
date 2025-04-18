@@ -11,14 +11,12 @@ import NetworkFoundation
 
 struct InstancesListRequest {
     
-    let jsonDecoder = JSONDecoder()
-    
     let networkService: NetworkService
 }
 
 extension InstancesListRequest: RequestProtocol {
     
-    func response() async throws(InstancesError) -> InstancesResponse {
+    func response() async throws(MastodonError) -> InstancesResponse {
         assert(!InstancesConstants.instancesSecret.isEmpty)
         
         Logger.instances.debug("Starting request for instances list")
@@ -39,7 +37,7 @@ extension InstancesListRequest: RequestProtocol {
         
         do {
             let data = try await networkService.data(for: request)
-            let decodedData = try jsonDecoder.decode(InstancesResponse.self, from: data)
+            let decodedData = try JSONDecoder.mastodonJSONDecoder.decode(InstancesResponse.self, from: data)
             Logger.instances.info("Request for instances list succeeded")
             return decodedData
         } catch let networkError as NetworkService.Error {

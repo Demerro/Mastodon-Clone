@@ -10,8 +10,6 @@ import os.log
 import NetworkFoundation
 
 struct ProfileRequest {
-    
-    let jsonDecoder = JSONDecoder()
 
     let networkService: NetworkService
     
@@ -22,7 +20,7 @@ struct ProfileRequest {
 
 extension ProfileRequest: RequestProtocol {
     
-    func response() async throws(Error) -> Account {
+    func response() async throws(MastodonError) -> Account {
         Logger.profile.debug("Starting request for current account")
         
         var urlComponents = URLComponents()
@@ -35,7 +33,7 @@ extension ProfileRequest: RequestProtocol {
         
         do {
             let data = try await networkService.data(for: request)
-            let decodedData = try jsonDecoder.decode(Account.self, from: data)
+            let decodedData = try JSONDecoder.mastodonJSONDecoder.decode(Account.self, from: data)
             Logger.profile.info("Request for current account succeeded")
             return decodedData
         } catch let networkError as NetworkService.Error {
@@ -48,17 +46,5 @@ extension ProfileRequest: RequestProtocol {
             Logger.profile.error("Encountered unknown error: \(error)")
             throw .unknown(error)
         }
-    }
-}
-
-extension ProfileRequest {
-    
-    enum Error: Swift.Error {
-        
-        case network(NetworkService.Error)
-        
-        case decoding(DecodingError)
-        
-        case unknown(Swift.Error)
     }
 }

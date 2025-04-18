@@ -11,8 +11,6 @@ import NetworkFoundation
 
 struct ObtainTokenRequest {
     
-    let jsonDecoder = JSONDecoder()
-    
     let networkService: NetworkService
     
     let instanceHost: String
@@ -22,7 +20,7 @@ struct ObtainTokenRequest {
 
 extension ObtainTokenRequest: RequestProtocol {
     
-    func response() async throws(Error) -> ObtainTokenResponse {
+    func response() async throws(MastodonError) -> ObtainTokenResponse {
         Logger.authorization.debug("Starting request for token")
         
         var urlComponents = URLComponents()
@@ -43,7 +41,7 @@ extension ObtainTokenRequest: RequestProtocol {
         
         do {
             let data = try await networkService.data(for: request)
-            let decodedData = try jsonDecoder.decode(ObtainTokenResponse.self, from: data)
+            let decodedData = try JSONDecoder.mastodonJSONDecoder.decode(ObtainTokenResponse.self, from: data)
             Logger.authorization.info("Token request succeeded")
             return decodedData
         } catch let networkError as NetworkService.Error {
@@ -59,14 +57,5 @@ extension ObtainTokenRequest: RequestProtocol {
     }
 }
 
-extension ObtainTokenRequest {
-    
-    enum Error: Swift.Error {
-        
-        case network(NetworkService.Error)
-        
-        case decoding(DecodingError)
-        
-        case unknown(Swift.Error)
-    }
+extension ObtainTokenRequest: Sendable {
 }

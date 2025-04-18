@@ -11,8 +11,6 @@ import NetworkFoundation
 
 struct InstancesSearchRequest {
     
-    let jsonDecoder = JSONDecoder()
-    
     let networkService: NetworkService
     
     let query: String
@@ -20,7 +18,7 @@ struct InstancesSearchRequest {
 
 extension InstancesSearchRequest: RequestProtocol {
     
-    func response() async throws(InstancesError) -> InstancesResponse {
+    func response() async throws(MastodonError) -> InstancesResponse {
         assert(!InstancesConstants.instancesSecret.isEmpty)
         
         Logger.instances.debug("Starting request for instances search")
@@ -38,7 +36,7 @@ extension InstancesSearchRequest: RequestProtocol {
         
         do {
             let data = try await networkService.data(for: request)
-            let instanceSearchResponse = try jsonDecoder.decode(InstancesResponse.self, from: data)
+            let instanceSearchResponse = try JSONDecoder.mastodonJSONDecoder.decode(InstancesResponse.self, from: data)
             Logger.instances.info("Request for instances search succeeded")
             return instanceSearchResponse
         } catch let networkError as NetworkService.Error {

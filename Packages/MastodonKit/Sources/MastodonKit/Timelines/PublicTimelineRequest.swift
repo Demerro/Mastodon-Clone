@@ -1,15 +1,15 @@
 //
-//  AccountStatusesRequest.swift
+//  PublicTimelineRequest.swift
 //  MastodonKit
 //
-//  Created by Nikita Prokhorchuk on 1.02.25.
+//  Created by Nikita Prokhorchuk on 15.04.25.
 //
 
 import Foundation
 import os.log
 import NetworkFoundation
 
-public struct AccountStatusesRequest {
+public struct PublicTimelineRequest {
     
     public let networkService: NetworkService
     
@@ -17,25 +17,32 @@ public struct AccountStatusesRequest {
     
     public let accessToken: String
     
-    public let accountID: String
+    public let maxId: String?
     
-    public init(networkService: NetworkService, instanceHost: String, accessToken: String, accountID: String) {
+    public let limit: Int
+    
+    public init(networkService: NetworkService, instanceHost: String, accessToken: String, maxId: String? = nil, limit: Int = 20) {
         self.networkService = networkService
         self.instanceHost = instanceHost
         self.accessToken = accessToken
-        self.accountID = accountID
+        self.maxId = maxId
+        self.limit = limit
     }
 }
 
-extension AccountStatusesRequest: RequestProtocol {
+extension PublicTimelineRequest: RequestProtocol {
     
     public func response() async throws(MastodonError) -> [Status] {
-        Logger.accountStatuses.debug("Starting request for account(id: \(accountID) statuses")
+        Logger.timelines.debug("Starting request for public timeline")
         
         var urlComponents = URLComponents()
         urlComponents.scheme = "https"
         urlComponents.host = instanceHost
-        urlComponents.path = "/api/v1/accounts/\(accountID)/statuses"
+        urlComponents.path = "/api/v1/timelines/public"
+        urlComponents.queryItems = [
+            URLQueryItem(name: "max_id", value: maxId),
+            URLQueryItem(name: "limit", value: String(limit))
+        ]
         
         var request = URLRequest(url: urlComponents.url!)
         request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
@@ -43,20 +50,20 @@ extension AccountStatusesRequest: RequestProtocol {
         do {
             let data = try await networkService.data(for: request)
             let decodedData = try JSONDecoder.mastodonJSONDecoder.decode([Status].self, from: data)
-            Logger.accountStatuses.info("Request for account(id: \(accountID)) statuses succeeded")
+            Logger.timelines.info("Request for public timeline succeeded")
             return decodedData
         } catch let networkError as NetworkService.Error {
-            Logger.accountStatuses.error("Encountered network error: \(networkError)")
+            Logger.timelines.error("Encountered network error: \(networkError)")
             throw .network(networkError)
         } catch let decodingError as DecodingError {
-            Logger.accountStatuses.error("Encountered decoding error: \(decodingError)")
+            Logger.timelines.error("Encountered decoding error: \(decodingError)")
             throw .decoding(decodingError)
         } catch let error {
-            Logger.accountStatuses.error("Encountered unknown error: \(error)")
+            Logger.timelines.error("Encountered unknown error: \(error)")
             throw .unknown(error)
         }
     }
 }
 
-extension AccountStatusesRequest: Sendable {
+extension PublicTimelineRequest: Sendable {
 }

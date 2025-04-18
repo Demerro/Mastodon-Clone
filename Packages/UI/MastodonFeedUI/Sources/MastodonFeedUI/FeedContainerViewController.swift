@@ -10,6 +10,7 @@ import SafariServices
 import UIKitFoundation
 import MastodonCoreUI
 import MastodonSharedUI
+import MastodonKit
 
 final class FeedContainerViewController: ViewController {
     
@@ -33,12 +34,69 @@ final class FeedContainerViewController: ViewController {
         return EmptyViewController(contentConfiguration: configuration)
     }()
     
+    private let titleButton: UIButton = {
+        var configuration = UIButton.Configuration.plain()
+        configuration.title = "Following"
+        configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = UIFont.preferredFont(forTextStyle: .title3, compatibleWith: UITraitCollection(legibilityWeight: .bold))
+            outgoing.foregroundColor = .label
+            return outgoing
+        }
+        configuration.titleAlignment = .leading
+        configuration.image = UIImage(systemName: "chevron.down.circle", withConfiguration: UIImage.SymbolConfiguration(textStyle: .caption1))
+        configuration.baseForegroundColor = .secondaryLabel
+        configuration.imagePadding = 10.0
+        configuration.imagePlacement = .trailing
+        let button = UIButton(configuration: configuration)
+        button.contentHorizontalAlignment = .leading
+        button.showsMenuAsPrimaryAction = true
+        return button
+    }()
+    
+    private(set) var state = State.following {
+        didSet {
+            titleButton.configuration?.title = state == .following ? "Following" : "Local"
+            titleButton.menu = titleButtonMenu
+            fetchFeed()
+        }
+    }
+    
+    private let timelineStore = TimelineStore()
+    
+    private var task: Task<Void, any Error>?
+    
+    private var isPaginating = false
+    
     override func setupCommon() {
         super.setupCommon()
-        title = "Feed"
+        titleButton.menu = titleButtonMenu
+        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: titleButton)
         emptyViewController.delegate = self
         contentViewController.delegate = self
+        setContentScrollView(contentViewController.collectionView)
         fetchFeed()
+    }
+}
+
+extension FeedContainerViewController {
+    
+    enum State {
+        
+        case following
+        
+        case local
+    }
+    
+    private var titleButtonMenu: UIMenu {
+        UIMenu(children: [
+            UIAction(title: "Following", image: UIImage(systemName: "house"), state: state == .following ? .on : .off) { [unowned self] _ in
+                state = .following
+            },
+            UIAction(title: "Local", image: UIImage(systemName: "building.2"), state: state == .local ? .on : .off) { [unowned self] _ in
+                state = .local
+            },
+        ])
     }
 }
 
@@ -46,31 +104,55 @@ extension FeedContainerViewController {
     
     private func fetchFeed() {
         switchStateViewController(to: loadingViewController)
-//        Task {
-//            do {
-//                let request = AccountStatusesRequest(networkService: .api, instanceHost: "mastodon.social", accessToken: "SJzgmWQDDp8MtTp7yxAd5_taoVtqj40zGRrM871tWuk", accountID: "113520982452809377")
-//                let statuses = try await withThrowingTaskGroup(of: Status.self) { taskGroup in
-//                    let statuses = try await request.response()
-//                    for var status in statuses {
-//                        taskGroup.addTask {
-//                            guard !status.content.isEmpty else { return status }
-//                            var content = try NSAttributedString(data: Data(status.content.utf8), options: [.documentType: NSAttributedString.DocumentType.html], documentAttributes: nil).string
-//                            content.removeLast()
-//                            status.content = content
-//                            return status
-//                        }
-//                    }
-//                    return try await taskGroup
-//                        .reduce(into: [Status]()) { $0.append($1) }
-//                        .sorted { $0.createdAt > $1.createdAt }
-//                }
-//                contentViewController.configuration = .init(statuses: statuses)
-//                switchStateViewController(to: contentViewController)
-//                setContentScrollView(contentViewController.collectionView)
-//            } catch {
-//                switchStateViewController(to: emptyViewController)
-//            }
-//        }
+        task?.cancel()
+        task = Task {
+            do {
+                switch state {
+                case .following:
+                    try await timelineStore.refreshHomeTimeline()
+                case .local:
+                    try await timelineStore.refreshPublicTimeline()
+                }
+                contentViewController.configuration = FeedContentViewController.Configuration(statuses: timelineStore.statuses, reloadData: true)
+                switchStateViewController(to: contentViewController)
+            } catch {
+                switchStateViewController(to: emptyViewController)
+            }
+        }
+    }
+    
+    private func fetchFeedWithoutLoadingController() {
+        task?.cancel()
+        task = Task {
+            do {
+                switch state {
+                case .following:
+                    try await timelineStore.refreshHomeTimeline()
+                case .local:
+                    try await timelineStore.refreshPublicTimeline()
+                }
+                contentViewController.configuration = FeedContentViewController.Configuration(statuses: timelineStore.statuses, reloadData: true)
+            } catch {
+                switchStateViewController(to: emptyViewController)
+            }
+            contentViewController.collectionView.refreshControl?.endRefreshing()
+        }
+    }
+    
+    private func appendFeed() {
+        guard !isPaginating else { return }
+        isPaginating = true
+        task?.cancel()
+        task = Task {
+            defer { isPaginating = false }
+            switch state {
+            case .following:
+                try await timelineStore.appendHomeTimeline()
+            case .local:
+                try await timelineStore.appendPublicTimeline()
+            }
+            contentViewController.configuration = FeedContentViewController.Configuration(statuses: timelineStore.statuses, reloadData: false)
+        }
     }
 }
 
@@ -103,6 +185,14 @@ extension FeedContainerViewController: FeedContentViewControllerDelegate {
     
     func feedContentViewController(_ viewController: FeedContentViewController, didSelectURL url: URL) {
         present(SFSafariViewController(url: url), animated: true)
+    }
+    
+    func feedContentViewControllerDidRefresh(_ viewController: FeedContentViewController) {
+        fetchFeedWithoutLoadingController()
+    }
+    
+    func feedContentViewControllerDidPagination(_ viewController: FeedContentViewController) {
+        appendFeed()
     }
 }
 

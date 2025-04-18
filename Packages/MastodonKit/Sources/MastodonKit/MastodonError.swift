@@ -1,18 +1,18 @@
 //
-//  InstancesError.swift
+//  MastodonError.swift
 //  MastodonKit
 //
-//  Created by Nikita Prokhorchuk on 14.12.24.
+//  Created by Nikita Prokhorchuk on 16.04.25.
 //
 
 import Foundation
 import NetworkFoundation
 
-public enum InstancesError: Error {
+public enum MastodonError: Error {
     
     case network(NetworkService.Error)
     
     case decoding(DecodingError)
     
-    case unknown(Swift.Error)
+    case unknown(Error)
 }

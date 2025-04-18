@@ -9,6 +9,7 @@ import UIKit
 import UIKitFoundation
 import UIKitUtilities
 
+@MainActor
 public protocol VideoPreviewPostCollectionViewCellDelegate: AnyObject {
     
     func videoPreviewPostCollectionViewCell(_ cell: VideoPreviewPostCollectionViewCell, didSelectImageView imageView: UIImageView)
