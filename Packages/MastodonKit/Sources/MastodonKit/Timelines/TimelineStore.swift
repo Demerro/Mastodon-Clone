@@ -48,9 +48,10 @@ extension TimelineStore {
 extension TimelineStore {
     
     public func refreshHomeTimeline() async throws(Swift.Error) {
+        homeTimelineMaxId = nil
         let homeTimeline = try await loadHomeTimeline()
         homeTimelineMaxId = homeTimeline.last?.id
-        statuses += homeTimeline
+        statuses = homeTimeline
     }
     
     public func appendHomeTimeline() async throws(Swift.Error) {
@@ -65,6 +66,7 @@ extension TimelineStore {
 extension TimelineStore {
     
     public func refreshPublicTimeline() async throws(Swift.Error) {
+        publicTimelineMaxId = nil
         let publicTimeline = try await loadPublicTimeline()
         publicTimelineMaxId = publicTimeline.last?.id
         statuses = publicTimeline
@@ -75,14 +77,15 @@ extension TimelineStore {
         if let maxId = publicTimeline.last?.id {
             publicTimelineMaxId = maxId
         }
-        statuses += try await loadPublicTimeline()
+        statuses += publicTimeline
     }
 }
 
 extension TimelineStore {
     
     private func parseHTMLContentAndSortStatuses(_ statuses: [Status]) async throws(Swift.Error) -> [Status] {
-        try await withThrowingTaskGroup(of: Status.self) { taskGroup in
+        print(#function)
+        return try await withThrowingTaskGroup(of: Status.self) { taskGroup in
             for var status in statuses {
                 taskGroup.addTask {
                     guard !status.content.isEmpty else { return status }
