@@ -17,7 +17,7 @@ public struct MediaAttachment: Sendable, Decodable, Identifiable {
     
     public let previewURL: URL
     
-    public let meta: Meta
+    public let meta: Meta?
     
     public let blurHash: String?
 }

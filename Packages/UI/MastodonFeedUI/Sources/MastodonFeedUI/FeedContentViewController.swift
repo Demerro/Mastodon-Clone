@@ -77,7 +77,7 @@ extension FeedContentViewController {
                 collectionView.scrollToItem(at: [0, 0], at: .top, animated: false)
             }
         } else {
-            dataSource.applySnapshotUsingReloadData(snapshot)
+            dataSource.apply(snapshot)
         }
     }
 }
@@ -168,7 +168,7 @@ extension FeedContentViewController {
             
             let mediaAttachment = status.mediaAttachments.first!
             let imageAttachmentPreparationConfiguration = ImageAttachmentMosaicStackView.PreparationConfiguration(
-                singleImageAspectRatio: mediaAttachment.meta.original.width / mediaAttachment.meta.original.height,
+                singleImageAspectRatio: mediaAttachment.meta!.original.width / mediaAttachment.meta!.original.height,
                 imagesCount: status.mediaAttachments.count
             )
             
@@ -189,8 +189,8 @@ extension FeedContentViewController {
                     let indexedImages = await withTaskGroup(of: (Int, UIImage?).self) { taskGroup in
                         for (index, mediaAttachment) in status.mediaAttachments.enumerated() {
                             taskGroup.addTask {
-                                let image: UIImage? = if let blurHash = mediaAttachment.blurHash {
-                                    UIImage(blurHash: blurHash, size: CGSize(width: mediaAttachment.meta.small.width, height: mediaAttachment.meta.small.height))
+                                let image: UIImage? = if let blurHash = mediaAttachment.blurHash, let meta = mediaAttachment.meta {
+                                    UIImage(blurHash: blurHash, size: CGSize(width: meta.small.width, height: meta.small.height))
                                 } else {
                                     nil
                                 }
@@ -258,9 +258,9 @@ extension FeedContentViewController {
             )
             
             let video = status.mediaAttachments.first!
-            let previewAspectRatio = video.meta.original.width / video.meta.original.height
+            let previewAspectRatio = video.meta!.original.width / video.meta!.original.height
             let videoPreviewViewConfiguration = VideoPreviewView.PreparationConfiguration(
-                videoDuration: video.meta.original.duration!, 
+                videoDuration: video.meta!.original.duration!,
                 previewAspectRatio: previewAspectRatio
             )
             
@@ -283,8 +283,8 @@ extension FeedContentViewController {
             
             if status.sensitive {
                 Task {
-                    let image: UIImage? = if let blurHash = video.blurHash {
-                        UIImage(blurHash: blurHash, size: CGSize(width: video.meta.small.width, height: video.meta.small.height))
+                    let image: UIImage? = if let blurHash = video.blurHash, let meta = video.meta {
+                        UIImage(blurHash: blurHash, size: CGSize(width: meta.small.width, height: meta.small.height))
                     } else {
                         nil
                     }

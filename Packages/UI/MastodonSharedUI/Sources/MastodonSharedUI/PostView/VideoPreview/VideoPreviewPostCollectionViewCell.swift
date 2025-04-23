@@ -189,7 +189,7 @@ extension VideoPreviewPostCollectionViewCell {
         
         public var content: String?
         
-        public var videoPreviewViewConfiguration: VideoPreviewView.Configuration?
+        public var videoPreviewViewConfiguration: VideoPreviewView.Configuration = VideoPreviewView.EmptyConfiguration()
         
         public var spoilerConfiguration = SpoilerView.Configuration()
         
