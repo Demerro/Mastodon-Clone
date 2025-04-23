@@ -123,10 +123,16 @@ extension VideoPreviewView {
     private func applyConfigurationIfNeeded() {
         guard needsApplyConfiguration else { return }
         needsApplyConfiguration = false
-        if let preparationConfiguration = configuration as? PreparationConfiguration {
+
+        switch configuration {
+        case let preparationConfiguration as PreparationConfiguration:
             apply(preparationConfiguration: preparationConfiguration)
-        } else if let contentConfiguration = configuration as? ContentConfiguration {
+        case let contentConfiguration as ContentConfiguration:
             apply(contentConfiguration: contentConfiguration)
+        case is EmptyConfiguration:
+            applyEmptyConfiguration()
+        default:
+            assertionFailure()
         }
     }
     
@@ -157,6 +163,12 @@ extension VideoPreviewView {
             imageView.image = nil
         }
     }
+    
+    private func applyEmptyConfiguration() {
+        resizingTask?.cancel()
+        durationLabel.text = nil
+        imageView.image = nil
+    }
 }
 
 extension VideoPreviewView {
@@ -168,17 +180,12 @@ extension VideoPreviewView {
         let minutes = (totalSeconds % 3600) / 60
         let seconds = totalSeconds % 60
 
-        if hours > 0 {
-            return String(format: "%2d:%02d:%02d", hours, minutes, seconds)
-        } else {
-            return String(format: "%02d:%02d", minutes, seconds)
-        }
+        return hours > 0 ? String(format: "%2d:%02d:%02d", hours, minutes, seconds) : String(format: "%02d:%02d", minutes, seconds)
     }
 }
 
 extension VideoPreviewView {
     
-    @_marker
     public protocol Configuration {
     }
     
@@ -200,6 +207,12 @@ extension VideoPreviewView {
         
         public init(previewImage: UIImage?) {
             self.previewImage = previewImage
+        }
+    }
+    
+    public struct EmptyConfiguration: Sendable, Hashable, Configuration {
+
+        public init() {
         }
     }
 }

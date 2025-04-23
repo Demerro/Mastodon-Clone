@@ -98,34 +98,35 @@ extension PreviewCardView {
     private func applyConfigurationIfNeeded() {
         guard needsApplyConfiguration else { return }
         needsApplyConfiguration = false
-        applyConfiguration()
-    }
-    
-    private func applyConfiguration() {
-        if let contentConfiguration = configuration as? ContentConfiguration {
+        
+        switch configuration {
+        case let contentConfiguration as ContentConfiguration:
             apply(contentConfiguration: contentConfiguration)
-        } else if let imageConfiguration = configuration as? ImageConfiguration {
+        case let imageConfiguration as ImageConfiguration:
             apply(imageConfiguration: imageConfiguration)
+        case is EmptyConfiguration:
+            applyEmptyConfiguration()
+        default:
+            assertionFailure()
         }
     }
     
     private func apply(contentConfiguration: ContentConfiguration) {
         var constraints = [NSLayoutConstraint]()
         
-        let imageSize = contentConfiguration.imageSize
-        imageView.isHidden = imageSize == .zero
+        imageView.isHidden = contentConfiguration.imageSize == .zero
         imageView.image = nil
-        if imageSize != .zero {
+        if imageView.isHidden {
+            constraints += [
+                titleLabel.topAnchor.constraint(equalToSystemSpacingBelow: topAnchor, multiplier: 1.0),
+            ]
+        } else {
             constraints += [
                 imageView.topAnchor.constraint(equalTo: topAnchor),
                 imageView.leadingAnchor.constraint(equalTo: leadingAnchor),
                 trailingAnchor.constraint(equalTo: imageView.trailingAnchor),
-                imageView.widthAnchor.constraint(equalTo: imageView.heightAnchor, multiplier: imageSize.width / imageSize.height),
+                imageView.widthAnchor.constraint(equalTo: imageView.heightAnchor, multiplier: contentConfiguration.imageSize.width / contentConfiguration.imageSize.height),
                 titleLabel.topAnchor.constraint(equalToSystemSpacingBelow: imageView.bottomAnchor, multiplier: 1.0),
-            ]
-        } else {
-            constraints += [
-                titleLabel.topAnchor.constraint(equalToSystemSpacingBelow: topAnchor, multiplier: 1.0),
             ]
         }
         
@@ -133,7 +134,7 @@ extension PreviewCardView {
         
         descriptionLabel.text = contentConfiguration.description
         descriptionLabel.isHidden = contentConfiguration.description.isEmpty
-        if contentConfiguration.description.isEmpty {
+        if descriptionLabel.isHidden {
             constraints += [
                 providerLabel.topAnchor.constraint(equalToSystemSpacingBelow: titleLabel.bottomAnchor, multiplier: 1.0)
             ]
@@ -171,11 +172,17 @@ extension PreviewCardView {
             }
         }
     }
+    
+    private func applyEmptyConfiguration() {
+        imageView.image = nil
+        titleLabel.text = nil
+        descriptionLabel.text = nil
+        providerLabel.text = nil
+    }
 }
 
 extension PreviewCardView {
     
-    @_marker
     public protocol Configuration: Sendable {
     }
     
@@ -203,6 +210,12 @@ extension PreviewCardView {
         
         public init(image: UIImage?) {
             self.image = image
+        }
+    }
+    
+    public struct EmptyConfiguration: Configuration {
+        
+        public init() {
         }
     }
 }

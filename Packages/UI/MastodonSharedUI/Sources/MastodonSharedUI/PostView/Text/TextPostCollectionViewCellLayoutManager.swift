@@ -68,10 +68,10 @@ extension TextPostCollectionViewCellLayoutManager {
     private func layoutContent() {
         cell.spoilerView.isHidden = true
         cell.contentTextView.isHidden = false
-        cell.previewCardView.isHidden = cell.configuration?.previewCardConfiguration == nil
+        cell.previewCardView.isHidden = cell.configuration.previewCardConfiguration is PreviewCardView.EmptyConfiguration
         
         if let constraint { NSLayoutConstraint.deactivate([constraint]) }
-        constraint = if cell.configuration?.previewCardConfiguration == nil {
+        constraint = if cell.previewCardView.isHidden {
             cell.buttonsStackView.topAnchor.constraint(equalToSystemSpacingBelow: cell.contentTextView.bottomAnchor, multiplier: 1.0)
         } else {
             cell.buttonsStackView.topAnchor.constraint(equalToSystemSpacingBelow: cell.previewCardView.bottomAnchor, multiplier: 1.0)

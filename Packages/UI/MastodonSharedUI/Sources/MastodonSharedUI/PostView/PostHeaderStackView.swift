@@ -66,7 +66,7 @@ public final class PostHeaderStackView: StackView {
     
     private var needsApplyConfiguration = false
     
-    public var configuration: Configuration? {
+    public var configuration: Configuration = EmptyConfiguration() {
         didSet { setNeedsApplyConfiguration() }
     }
     
@@ -131,10 +131,16 @@ extension PostHeaderStackView {
     private func applyConfigurationIfNeeded() {
         guard needsApplyConfiguration else { return }
         needsApplyConfiguration = false
-        if let contentConfiguration = configuration as? ContentConfiguration {
+       
+        switch configuration {
+        case let contentConfiguration as ContentConfiguration:
             apply(contentConfiguration: contentConfiguration)
-        } else if let imageConfiguration = configuration as? ImageConfiguration {
+        case let imageConfiguration as ImageConfiguration:
             apply(imageConfiguration: imageConfiguration)
+        case is EmptyConfiguration:
+            applyEmptyConfiguration()
+        default:
+            assertionFailure()
         }
     }
     
@@ -146,18 +152,24 @@ extension PostHeaderStackView {
     
     private func apply(imageConfiguration: ImageConfiguration) {
         if let avatarImage = imageConfiguration.avatarImage {
-            UIView.transition(with: avatarImageView, duration: CATransaction.animationDuration()) { [self] in
+            UIView.transition(with: avatarImageView, duration: CATransaction.animationDuration() + 1) { [self] in
                 avatarImageView.image = avatarImage
             }
         } else {
             avatarImageView.image = nil
         }
     }
+    
+    private func applyEmptyConfiguration() {
+        displayNameLabel.text = nil
+        eyeButton.isHidden = true
+        informationLabel.text = nil
+        avatarImageView.image = nil
+    }
 }
 
 extension PostHeaderStackView {
-    
-    @_marker
+
     public protocol Configuration {
     }
     
@@ -185,6 +197,12 @@ extension PostHeaderStackView {
             self.time = time
             self.username = username
             self.eyeHidden = eyeHidden
+        }
+    }
+    
+    public struct EmptyConfiguration: Configuration, Sendable, Hashable {
+        
+        public init() {
         }
     }
 }

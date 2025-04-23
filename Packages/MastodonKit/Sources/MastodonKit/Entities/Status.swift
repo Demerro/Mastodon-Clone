@@ -50,7 +50,6 @@ extension Status {
         favourited = try container.decodeIfPresent(Bool.self, forKey: .favourited) ?? false
         reblogged = try container.decodeIfPresent(Bool.self, forKey: .reblogged) ?? false
         content = try container.decode(String.self, forKey: .content)
-        print(content)
         account = try container.decode(Account.self, forKey: .account)
         mediaAttachments = try container.decodeIfPresent([MediaAttachment].self, forKey: .mediaAttachments) ?? []
         previewCard = try container.decodeIfPresent(PreviewCard.self, forKey: .previewCard)

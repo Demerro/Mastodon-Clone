@@ -32,7 +32,7 @@ public final class ImageAttachmentMosaicStackView: StackView {
     
     private var needsApplyConfiguration = false
     
-    public var configuration: (any Configuration)? {
+    public var configuration: Configuration = EmptyConfiguration() {
         didSet { setNeedsApplyConfiguration() }
     }
     
@@ -67,10 +67,16 @@ extension ImageAttachmentMosaicStackView {
     private func applyConfigurationIfNeeded() {
         guard needsApplyConfiguration else { return }
         needsApplyConfiguration = false
-        if let preparationConfiguration = configuration as? PreparationConfiguration {
+        
+        switch configuration {
+        case let preparationConfiguration as PreparationConfiguration:
             apply(preparationConfiguration: preparationConfiguration)
-        } else if let contentConfiguration = configuration as? ContentConfiguration {
+        case let contentConfiguration as ContentConfiguration:
             apply(contentConfiguration: contentConfiguration)
+        case is EmptyConfiguration:
+            applyEmptyConfiguration()
+        default:
+            assertionFailure()
         }
     }
     
@@ -145,6 +151,14 @@ extension ImageAttachmentMosaicStackView {
             }
         }
     }
+    
+    private func applyEmptyConfiguration() {
+        resizingTask?.cancel()
+        imageViews.removeAll()
+        for subview in leftStackView.subviews + rightStackView.subviews {
+            subview.removeFromSuperview()
+        }
+    }
 }
 
 extension ImageAttachmentMosaicStackView {
@@ -160,7 +174,6 @@ extension ImageAttachmentMosaicStackView {
 
 extension ImageAttachmentMosaicStackView {
     
-    @_marker
     public protocol Configuration {
     }
     
@@ -176,12 +189,18 @@ extension ImageAttachmentMosaicStackView {
         }
     }
     
-    public struct ContentConfiguration: Sendable, Hashable, Configuration {
+    public struct ContentConfiguration: Configuration, Sendable, Hashable {
         
         public let images: [UIImage?]
         
         public init(images: [UIImage?]) {
             self.images = images
+        }
+    }
+    
+    public struct EmptyConfiguration: Configuration, Sendable, Hashable {
+        
+        public init() {
         }
     }
 }

@@ -33,7 +33,7 @@ public final class SpoilerView: View {
     
     private var needsApplyConfiguration = false
     
-    public var configuration: Configuration? {
+    public var configuration = Configuration() {
         didSet { setNeedsApplyConfiguration() }
     }
     
@@ -85,10 +85,10 @@ extension SpoilerView {
     }
     
     private func applyConfiguration() {
-        spoilerLabel.text = configuration?.text
-        imageAttachmentMosaicStackView.configuration = configuration?.imageAttachmentMosaicStackViewConfiguration
+        spoilerLabel.text = configuration.text
+        imageAttachmentMosaicStackView.configuration = configuration.imageAttachmentMosaicStackViewConfiguration
         
-        let textOnlySpoiler = configuration?.imageAttachmentMosaicStackViewConfiguration == nil
+        let textOnlySpoiler = configuration.imageAttachmentMosaicStackViewConfiguration is ImageAttachmentMosaicStackView.EmptyConfiguration
         imageAttachmentMosaicStackView.isHidden = textOnlySpoiler
         
         var constraints = [NSLayoutConstraint]()
@@ -99,7 +99,7 @@ extension SpoilerView {
             ]
         }
         
-        if configuration?.text.isEmpty ?? true {
+        if configuration.text?.isEmpty ?? true {
             constraints += [
                 tipLabel.centerYAnchor.constraint(equalTo: centerYAnchor)
             ]
@@ -120,16 +120,11 @@ extension SpoilerView {
     
     public struct Configuration {
         
-        public let text: String
+        public var text: String? = nil
         
-        public var imageAttachmentMosaicStackViewConfiguration: ImageAttachmentMosaicStackView.Configuration?
+        public var imageAttachmentMosaicStackViewConfiguration: ImageAttachmentMosaicStackView.Configuration = ImageAttachmentMosaicStackView.EmptyConfiguration()
         
-        public init(
-            text: String,
-            imageAttachmentMosaicStackViewConfiguration: ImageAttachmentMosaicStackView.Configuration? = nil
-        ) {
-            self.text = text
-            self.imageAttachmentMosaicStackViewConfiguration = imageAttachmentMosaicStackViewConfiguration
+        public init() {
         }
     }
 }

@@ -67,11 +67,11 @@ extension ImageAttachmentPostCollectionViewCellLayoutManager {
     
     private func layoutContent() {
         cell.spoilerView.isHidden = true
-        cell.contentTextView.isHidden = cell.configuration?.content.isEmpty ?? true
+        cell.contentTextView.isHidden = cell.configuration.content?.isEmpty ?? true
         cell.imageAttachmentMosaicStackView.isHidden = false
         
         if let constraint { NSLayoutConstraint.deactivate([constraint]) }
-        constraint = if cell.configuration?.content.isEmpty ?? true {
+        constraint = if cell.contentTextView.isHidden {
             cell.imageAttachmentMosaicStackView.topAnchor.constraint(equalToSystemSpacingBelow: cell.headerStackView.bottomAnchor, multiplier: 1.0)
         } else {
             cell.contentTextView.topAnchor.constraint(equalToSystemSpacingBelow: cell.headerStackView.bottomAnchor, multiplier: 1.0)

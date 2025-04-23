@@ -97,15 +97,6 @@ extension FeedContentViewController {
                 username: status.account.username,
                 eyeHidden: !status.sensitive
             )
-            var previewCardConfiguration: PreviewCardView.Configuration?
-            if let previewCard = status.previewCard {
-                previewCardConfiguration = PreviewCardView.ContentConfiguration(
-                    imageSize: CGSize(width: previewCard.width, height: previewCard.height),
-                    title: previewCard.title,
-                    description: previewCard.description,
-                    providerHost: previewCard.url.host!
-                )
-            }
             
             let buttonsConfiguration = PostButtonsStackView.Configuration(
                 repliesCount: status.repliesCount,
@@ -113,14 +104,25 @@ extension FeedContentViewController {
                 favoritesCount: status.favouritesCount,
                 buttonFlags: .init(reblogsButtonToggled: status.reblogged, favoritesButtonToggled: status.favourited)
             )
-            var configuration = TextPostCollectionViewCell.Configuration(
-                headerConfiguration: headerContentConfiguration,
-                content: status.content,
-                previewURL: status.previewCard?.url,
-                previewCardConfiguration: previewCardConfiguration,
-                spoilerConfiguration: status.sensitive ? SpoilerView.Configuration(text: status.spoilerText) : nil,
-                buttonsConfiguration: buttonsConfiguration
-            )
+            
+            var spoilerConfiguration = SpoilerView.Configuration()
+            spoilerConfiguration.text = status.sensitive ? status.spoilerText : nil
+            
+            var configuration = TextPostCollectionViewCell.Configuration()
+            configuration.headerConfiguration = headerContentConfiguration
+            configuration.content = status.content
+            configuration.previewURL = status.previewCard?.url
+            configuration.spoilerConfiguration = spoilerConfiguration
+            configuration.buttonsConfiguration = buttonsConfiguration
+            
+            if let previewCard = status.previewCard {
+                configuration.previewCardConfiguration = PreviewCardView.ContentConfiguration(
+                    imageSize: CGSize(width: previewCard.width, height: previewCard.height),
+                    title: previewCard.title,
+                    description: previewCard.description,
+                    providerHost: previewCard.url.host!
+                )
+            }
             
             cell.configuration = configuration
             
@@ -169,20 +171,22 @@ extension FeedContentViewController {
                 singleImageAspectRatio: mediaAttachment.meta.original.width / mediaAttachment.meta.original.height,
                 imagesCount: status.mediaAttachments.count
             )
-            var configuration = ImageAttachmentPostCollectionViewCell.Configuration(
-                headerConfiguration: headerContentConfiguration,
-                content: status.content,
-                imageAttachmentMosaicStackViewConfiguration: imageAttachmentPreparationConfiguration,
-                spoilerConfiguration: status.sensitive ? SpoilerView.Configuration(text: status.spoilerText, imageAttachmentMosaicStackViewConfiguration: imageAttachmentPreparationConfiguration) : nil,
-                buttonsConfiguration: buttonsConfiguration
-            )
+            
+            var spoilerConfiguration = SpoilerView.Configuration()
+            spoilerConfiguration.text = status.sensitive ? status.spoilerText : nil
+            
+            var configuration = ImageAttachmentPostCollectionViewCell.Configuration()
+            configuration.headerConfiguration = headerContentConfiguration
+            configuration.content = status.content
+            configuration.imageAttachmentMosaicStackViewConfiguration = imageAttachmentPreparationConfiguration
+            configuration.spoilerConfiguration = spoilerConfiguration
+            configuration.buttonsConfiguration = buttonsConfiguration
             
             cell.configuration = configuration
             
             if status.sensitive {
                 Task {
-                    let indexedImages = await withTaskGroup(of: (Int, UIImage?).self) { [weak imageDownloader] taskGroup in
-                        guard let imageDownloader else { return [Int: UIImage?]() }
+                    let indexedImages = await withTaskGroup(of: (Int, UIImage?).self) { taskGroup in
                         for (index, mediaAttachment) in status.mediaAttachments.enumerated() {
                             taskGroup.addTask {
                                 let image: UIImage? = if let blurHash = mediaAttachment.blurHash {
@@ -201,7 +205,7 @@ extension FeedContentViewController {
                     let images = indexedImages
                         .sorted { $0.key < $1.key }
                         .map { $0.value }
-                    configuration.spoilerConfiguration?.imageAttachmentMosaicStackViewConfiguration = ImageAttachmentMosaicStackView.ContentConfiguration(images: images)
+                    configuration.spoilerConfiguration.imageAttachmentMosaicStackViewConfiguration = ImageAttachmentMosaicStackView.ContentConfiguration(images: images)
                     cell.configuration = configuration
                 }
             }
@@ -260,16 +264,21 @@ extension FeedContentViewController {
                 previewAspectRatio: previewAspectRatio
             )
             
-            var configuration = VideoPreviewPostCollectionViewCell.Configuration(
-                headerConfiguration: headerContentConfiguration,
-                content: status.content,
-                videoPreviewViewConfiguration: videoPreviewViewConfiguration,
-                spoilerConfiguration: status.sensitive ? SpoilerView.Configuration(
-                    text: status.spoilerText,
-                    imageAttachmentMosaicStackViewConfiguration: ImageAttachmentMosaicStackView.PreparationConfiguration(singleImageAspectRatio: previewAspectRatio, imagesCount: 1)
-                ) : nil,
-                buttonsConfiguration: buttonsConfiguration
-            )
+            var spoilerConfiguration = SpoilerView.Configuration()
+            spoilerConfiguration.text = status.sensitive ? status.spoilerText : nil
+            spoilerConfiguration.imageAttachmentMosaicStackViewConfiguration = if status.sensitive {
+                ImageAttachmentMosaicStackView.PreparationConfiguration(singleImageAspectRatio: previewAspectRatio, imagesCount: 1)
+            } else {
+                ImageAttachmentMosaicStackView.EmptyConfiguration()
+            }
+            
+            var configuration = VideoPreviewPostCollectionViewCell.Configuration()
+            configuration.headerConfiguration = headerContentConfiguration
+            configuration.content = status.content
+            configuration.videoPreviewViewConfiguration = videoPreviewViewConfiguration
+            configuration.spoilerConfiguration = spoilerConfiguration
+            configuration.buttonsConfiguration = buttonsConfiguration
+            
             cell.configuration = configuration
             
             if status.sensitive {
@@ -280,7 +289,7 @@ extension FeedContentViewController {
                         nil
                     }
                     guard cell.itemIdentifier as? ItemIdentifier == itemIdentifier else { return }
-                    configuration.spoilerConfiguration?.imageAttachmentMosaicStackViewConfiguration = ImageAttachmentMosaicStackView.ContentConfiguration(images: [image])
+                    configuration.spoilerConfiguration.imageAttachmentMosaicStackViewConfiguration = ImageAttachmentMosaicStackView.ContentConfiguration(images: [image])
                     cell.configuration = configuration
                 }
             }

@@ -9,8 +9,6 @@ import UIKit
 
 open class CollectionReusableView: UICollectionReusableView, ViewProtocol {
     
-    open override class var requiresConstraintBasedLayout: Bool { true }
-    
     public override init(frame: CGRect) {
         super.init(frame: frame)
         setupCommon()

@@ -60,7 +60,7 @@ public final class VideoPreviewPostCollectionViewCell: CollectionViewCell {
     
     public var needsApplyConfiguration = false
     
-    public var configuration: Configuration? {
+    public var configuration = Configuration() {
         didSet { setNeedsApplyConfiguration() }
     }
     
@@ -80,6 +80,13 @@ public final class VideoPreviewPostCollectionViewCell: CollectionViewCell {
         applyConfigurationIfNeeded()
         super.updateConstraints()
     }
+    
+    public override func prepareForReuse() {
+        itemIdentifier = nil
+        configuration = Configuration()
+        applyConfigurationIfNeeded()
+        super.prepareForReuse()
+    }
 }
 
 extension VideoPreviewPostCollectionViewCell {
@@ -94,16 +101,17 @@ extension VideoPreviewPostCollectionViewCell {
         guard needsApplyConfiguration else { return }
         needsApplyConfiguration = false
         applyConfiguration()
+        layoutIfNeeded()
     }
     
     private func applyConfiguration() {
-        headerStackView.configuration = configuration?.headerConfiguration
-        videoPreviewView.configuration = configuration?.videoPreviewViewConfiguration
-        contentTextView.text = configuration?.content
-        buttonsStackView.configuration = configuration?.buttonsConfiguration
-        spoilerView.configuration = configuration?.spoilerConfiguration
+        headerStackView.configuration = configuration.headerConfiguration
+        videoPreviewView.configuration = configuration.videoPreviewViewConfiguration
+        contentTextView.text = configuration.content
+        buttonsStackView.configuration = configuration.buttonsConfiguration
+        spoilerView.configuration = configuration.spoilerConfiguration
         
-        let hasSpoiler = configuration?.spoilerConfiguration != nil
+        let hasSpoiler = configuration.spoilerConfiguration.text != nil
         spoilerView.alpha = hasSpoiler ? 1.0 : 0.0
         contentTextView.alpha = hasSpoiler ? 0.0 : 1.0
         videoPreviewView.alpha = hasSpoiler ? 0.0 : 1.0
@@ -177,28 +185,17 @@ extension VideoPreviewPostCollectionViewCell {
     
     public struct Configuration {
         
-        public var headerConfiguration: PostHeaderStackView.Configuration
+        public var headerConfiguration: PostHeaderStackView.Configuration = PostHeaderStackView.EmptyConfiguration()
         
-        public let content: String
+        public var content: String?
         
         public var videoPreviewViewConfiguration: VideoPreviewView.Configuration?
         
-        public var spoilerConfiguration: SpoilerView.Configuration?
+        public var spoilerConfiguration = SpoilerView.Configuration()
         
-        public let buttonsConfiguration: PostButtonsStackView.Configuration
+        public var buttonsConfiguration: PostButtonsStackView.Configuration?
         
-        public init(
-            headerConfiguration: PostHeaderStackView.Configuration,
-            content: String,
-            videoPreviewViewConfiguration: VideoPreviewView.Configuration? = nil,
-            spoilerConfiguration: SpoilerView.Configuration?,
-            buttonsConfiguration: PostButtonsStackView.Configuration
-        ) {
-            self.headerConfiguration = headerConfiguration
-            self.content = content
-            self.videoPreviewViewConfiguration = videoPreviewViewConfiguration
-            self.spoilerConfiguration = spoilerConfiguration
-            self.buttonsConfiguration = buttonsConfiguration
+        public init() {
         }
     }
 }
