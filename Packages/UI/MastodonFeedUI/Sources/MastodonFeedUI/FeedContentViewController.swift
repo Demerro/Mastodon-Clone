@@ -174,6 +174,9 @@ extension FeedContentViewController {
             
             var spoilerConfiguration = SpoilerView.Configuration()
             spoilerConfiguration.text = status.sensitive ? status.spoilerText : nil
+            if status.sensitive {
+                spoilerConfiguration.imageAttachmentMosaicStackViewConfiguration = imageAttachmentPreparationConfiguration
+            }
             
             var configuration = ImageAttachmentPostCollectionViewCell.Configuration()
             configuration.headerConfiguration = headerContentConfiguration
@@ -266,10 +269,8 @@ extension FeedContentViewController {
             
             var spoilerConfiguration = SpoilerView.Configuration()
             spoilerConfiguration.text = status.sensitive ? status.spoilerText : nil
-            spoilerConfiguration.imageAttachmentMosaicStackViewConfiguration = if status.sensitive {
-                ImageAttachmentMosaicStackView.PreparationConfiguration(singleImageAspectRatio: previewAspectRatio, imagesCount: 1)
-            } else {
-                ImageAttachmentMosaicStackView.EmptyConfiguration()
+            if status.sensitive {
+                spoilerConfiguration.imageAttachmentMosaicStackViewConfiguration = ImageAttachmentMosaicStackView.PreparationConfiguration(singleImageAspectRatio: previewAspectRatio, imagesCount: 1)
             }
             
             var configuration = VideoPreviewPostCollectionViewCell.Configuration()
