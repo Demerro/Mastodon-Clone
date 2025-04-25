@@ -127,25 +127,25 @@ extension FeedContentViewController {
             cell.configuration = configuration
             
             Task {
-                let image = try await imageDownloader.loadAnimatedImage(from: status.account.avatar)
-                guard cell.itemIdentifier as? ItemIdentifier == itemIdentifier else { return }
-                configuration.headerConfiguration = PostHeaderStackView.ImageConfiguration(avatarImage: image)
-                cell.configuration = configuration
-            }
-            
-            if let previewImageURL = status.previewCard?.imageURL {
-                Task {
-                    let image = try await imageDownloader.loadImage(from: previewImageURL)
+                async let avatarImage = imageDownloader.loadAnimatedImage(from: status.account.avatar)
+                if let previewImageURL = status.previewCard?.imageURL {
+                    async let previewImage = imageDownloader.loadImage(from: previewImageURL)
+                    let (downloadedAvatarImage, downloadedPreviewImage) = try await (avatarImage, previewImage)
                     guard cell.itemIdentifier as? ItemIdentifier == itemIdentifier else { return }
-                    configuration.previewCardConfiguration = PreviewCardView.ImageConfiguration(image: image)
-                    cell.configuration = configuration
+                    configuration.headerConfiguration = PostHeaderStackView.ImageConfiguration(avatarImage: downloadedAvatarImage)
+                    configuration.previewCardConfiguration = PreviewCardView.ImageConfiguration(image: downloadedPreviewImage)
+                } else {
+                    let downloadedAvatarImage = try await avatarImage
+                    guard cell.itemIdentifier as? ItemIdentifier == itemIdentifier else { return }
+                    configuration.headerConfiguration = PostHeaderStackView.ImageConfiguration(avatarImage: downloadedAvatarImage)
                 }
+                cell.configuration = configuration
             }
         }
     }
     
     private func makeImageAttachmentCellRegistration() -> UICollectionView.CellRegistration<ImageAttachmentPostCollectionViewCell, ItemIdentifier> {
-        .init { [unowned self] cell, indexPath, itemIdentifier in
+        return .init { [unowned self] cell, indexPath, itemIdentifier in
             cell.itemIdentifier = itemIdentifier
             cell.delegate = self
             cell.layoutInvalidationDelegate = self
@@ -187,55 +187,58 @@ extension FeedContentViewController {
             
             cell.configuration = configuration
             
-            if status.sensitive {
-                Task {
-                    let indexedImages = await withTaskGroup(of: (Int, UIImage?).self) { taskGroup in
-                        for (index, mediaAttachment) in status.mediaAttachments.enumerated() {
-                            taskGroup.addTask {
-                                let image: UIImage? = if let blurHash = mediaAttachment.blurHash, let meta = mediaAttachment.meta {
-                                    UIImage(blurHash: blurHash, size: CGSize(width: meta.small.width, height: meta.small.height))
-                                } else {
-                                    nil
-                                }
-                                return (index, image)
-                            }
-                        }
-                        return await taskGroup.reduce(into: [Int: UIImage?]()) { result, element in
-                            result[element.0] = element.1
-                        }
-                    }
-                    guard cell.itemIdentifier as? String == itemIdentifier else { return }
-                    let images = indexedImages
-                        .sorted { $0.key < $1.key }
-                        .map { $0.value }
-                    configuration.spoilerConfiguration.imageAttachmentMosaicStackViewConfiguration = ImageAttachmentMosaicStackView.ContentConfiguration(images: images)
-                    cell.configuration = configuration
-                }
-            }
-            
             Task {
-                let image = try await imageDownloader.loadAnimatedImage(from: status.account.avatar)
-                guard cell.itemIdentifier as? ItemIdentifier == itemIdentifier else { return }
-                configuration.headerConfiguration = PostHeaderStackView.ImageConfiguration(avatarImage: image)
+                async let avatarImage = imageDownloader.loadAnimatedImage(from: status.account.avatar)
+                async let images = loadImages(from: status.mediaAttachments.map(\.previewURL))
+                async let spoilerBlurhashes: [UIImage?] = if status.sensitive {
+                    loadBlurHashImages(from: status.mediaAttachments)
+                } else {
+                    []
+                }
+                let (loadedSpoilerBlurhashes, downloadedAvatarImage, downloadedImages) = try await (spoilerBlurhashes, avatarImage, images)
+                guard cell.itemIdentifier as? String == itemIdentifier else { return }
+                configuration.headerConfiguration = PostHeaderStackView.ImageConfiguration(avatarImage: downloadedAvatarImage)
+                configuration.imageAttachmentMosaicStackViewConfiguration = ImageAttachmentMosaicStackView.ContentConfiguration(images: downloadedImages)
+                configuration.spoilerConfiguration.imageAttachmentMosaicStackViewConfiguration = ImageAttachmentMosaicStackView.ContentConfiguration(images: loadedSpoilerBlurhashes)
                 cell.configuration = configuration
             }
-            
-            Task {
-                let indexedImages = await withTaskGroup(of: (Int, UIImage?).self) { [weak imageDownloader] taskGroup in
-                    guard let imageDownloader else { return [Int: UIImage?]() }
-                    for (index, previewURL) in status.mediaAttachments.map(\.previewURL).enumerated() {
-                        taskGroup.addTask { return (index, try? await imageDownloader.loadImage(from: previewURL)) }
-                    }
-                    return await taskGroup.reduce(into: [Int: UIImage?]()) { result, element in
-                        result[element.0] = element.1
+        }
+        
+        @Sendable func loadImages(from urls: [URL]) async -> [UIImage?] {
+            await withTaskGroup(of: (Int, UIImage?).self) { [weak self] taskGroup in
+                guard let self else { return [] }
+                for (index, url) in urls.enumerated() {
+                    taskGroup.addTask {
+                        (index, try? await self.imageDownloader.loadImage(from: url))
                     }
                 }
-                guard cell.itemIdentifier as? String == itemIdentifier else { return }
-                let images = indexedImages
+
+                return await taskGroup
+                    .reduce(into: [Int: UIImage?]()) { $0[$1.0] = $1.1 }
+                    .lazy
                     .sorted { $0.key < $1.key }
                     .map { $0.value }
-                configuration.imageAttachmentMosaicStackViewConfiguration = ImageAttachmentMosaicStackView.ContentConfiguration(images: images)
-                cell.configuration = configuration
+            }
+        }
+
+        @Sendable func loadBlurHashImages(from attachments: [MediaAttachment]) async -> [UIImage?] {
+            await withTaskGroup(of: (Int, UIImage?).self) { taskGroup in
+                for (index, attachment) in attachments.enumerated() {
+                    taskGroup.addTask {
+                        let image: UIImage? = {
+                            guard let blurHash = attachment.blurHash,
+                                  let meta = attachment.meta else { return nil }
+                            return UIImage(blurHash: blurHash, size: CGSize(width: meta.small.width, height: meta.small.height))
+                        }()
+                        return (index, image)
+                    }
+                }
+
+                return await taskGroup
+                    .reduce(into: [Int: UIImage?]()) { $0[$1.0] = $1.1 }
+                    .lazy
+                    .sorted { $0.key < $1.key }
+                    .map { $0.value }
             }
         }
     }
@@ -282,30 +285,19 @@ extension FeedContentViewController {
             
             cell.configuration = configuration
             
-            if status.sensitive {
-                Task {
-                    let image: UIImage? = if let blurHash = video.blurHash, let meta = video.meta {
-                        UIImage(blurHash: blurHash, size: CGSize(width: meta.small.width, height: meta.small.height))
-                    } else {
-                        nil
-                    }
-                    guard cell.itemIdentifier as? ItemIdentifier == itemIdentifier else { return }
-                    configuration.spoilerConfiguration.imageAttachmentMosaicStackViewConfiguration = ImageAttachmentMosaicStackView.ContentConfiguration(images: [image])
-                    cell.configuration = configuration
+            Task {
+                async let avatarImage = imageDownloader.loadAnimatedImage(from: status.account.avatar)
+                async let previewImage = imageDownloader.loadImage(from: video.previewURL)
+                let blurhashImage: UIImage? = if status.sensitive, let blurHash = video.blurHash, let meta = video.meta {
+                    UIImage(blurHash: blurHash, size: CGSize(width: meta.small.width, height: meta.small.height))
+                } else {
+                    nil
                 }
-            }
-            
-            Task {
-                let image = try await imageDownloader.loadAnimatedImage(from: status.account.avatar)
+                let (downloadedAvatarImage, downloadedPreviewImage) = try await (avatarImage, previewImage)
                 guard cell.itemIdentifier as? ItemIdentifier == itemIdentifier else { return }
-                configuration.headerConfiguration = PostHeaderStackView.ImageConfiguration(avatarImage: image)
-                cell.configuration = configuration
-            }
-            
-            Task {
-                let image = try? await imageDownloader.loadImage(from: video.previewURL)
-                guard cell.itemIdentifier as? ItemIdentifier == itemIdentifier else { return }
-                configuration.videoPreviewViewConfiguration = VideoPreviewView.ContentConfiguration(previewImage: image)
+                configuration.headerConfiguration = PostHeaderStackView.ImageConfiguration(avatarImage: downloadedAvatarImage)
+                configuration.videoPreviewViewConfiguration = VideoPreviewView.ContentConfiguration(previewImage: downloadedPreviewImage)
+                configuration.spoilerConfiguration.imageAttachmentMosaicStackViewConfiguration = ImageAttachmentMosaicStackView.ContentConfiguration(images: [blurhashImage])
                 cell.configuration = configuration
             }
         }

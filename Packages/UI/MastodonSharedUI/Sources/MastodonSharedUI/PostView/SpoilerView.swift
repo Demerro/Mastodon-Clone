@@ -14,6 +14,7 @@ public final class SpoilerView: View {
     private let spoilerLabel: UILabel = {
         $0.translatesAutoresizingMaskIntoConstraints = false
         $0.font = .preferredFont(forTextStyle: .headline)
+        $0.numberOfLines = 0
         return $0
     }(UILabel(frame: .zero))
     
