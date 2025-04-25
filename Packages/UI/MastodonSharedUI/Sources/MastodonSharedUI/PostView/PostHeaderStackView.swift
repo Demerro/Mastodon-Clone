@@ -145,7 +145,11 @@ extension PostHeaderStackView {
     }
     
     private func apply(contentConfiguration: ContentConfiguration) {
-        displayNameLabel.text = contentConfiguration.displayName
+        displayNameLabel.text = if contentConfiguration.displayName.isEmpty {
+            contentConfiguration.username
+        } else {
+            contentConfiguration.displayName
+        }
         eyeButton.isHidden = contentConfiguration.eyeHidden
         informationLabel.text = "\(contentConfiguration.time) • \(contentConfiguration.username)"
     }
