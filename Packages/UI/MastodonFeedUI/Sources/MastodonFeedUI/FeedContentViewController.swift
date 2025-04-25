@@ -55,6 +55,7 @@ final class FeedContentViewController: ViewController {
     
     override func setupCommon() {
         collectionView.delegate = self
+        collectionView.prefetchDataSource = self
         collectionView.refreshControl = UIRefreshControl(frame: .zero, primaryAction: UIAction { [unowned self] _ in
             delegate?.feedContentViewControllerDidRefresh(self)
         })
@@ -326,25 +327,22 @@ extension FeedContentViewController {
 
 extension FeedContentViewController {
     
-    private typealias ItemIdentifier = String
-    
-    private enum Section { case main }
-}
-
-extension FeedContentViewController {
-    
     struct Configuration {
         
         let statuses: [Status]
         
         let reloadData: Bool
     }
+    
+    private typealias ItemIdentifier = String
+    
+    private enum Section { case main }
 }
 
 extension FeedContentViewController: ImageAttachmentPostCollectionViewCellDelegate {
     
     func imageAttachmentPostCollectionViewCell(_ cell: ImageAttachmentPostCollectionViewCell, didSelectImageView imageView: UIImageView) {
-        let image = imageView.image!
+        guard let image = imageView.image else { return }
         selectionItem = SelectionItem(view: imageView, image: image)
         delegate?.feedContentViewController(self, didSelectImage: image)
     }
@@ -438,5 +436,37 @@ extension FeedContentViewController: UIScrollViewDelegate {
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         guard scrollView.contentOffset.y > scrollView.contentSize.height - scrollView.frame.height - 100.0 else { return }
         delegate?.feedContentViewControllerDidPagination(self)
+    }
+}
+
+extension FeedContentViewController: UICollectionViewDataSourcePrefetching {
+    
+    func collectionView(_ collectionView: UICollectionView, prefetchItemsAt indexPaths: [IndexPath]) {
+        for indexPath in indexPaths {
+            let status = configuration.statuses[indexPath.item]
+            Task {
+                async let avatarImage = imageDownloader.loadAnimatedImage(from: status.account.avatar)
+                async let mediaAttachments = withTaskGroup(of: UIImage?.self, returning: [UIImage?].self) { [weak self] taskGroup in
+                    guard let self else { return [] }
+                    for url in status.mediaAttachments.map(\.url) {
+                        taskGroup.addTask {
+                            try? await self.imageDownloader.loadImage(from: url)
+                        }
+                    }
+                    return await taskGroup.reduce(into: []) { $0.append($1) }
+                }
+                _ = try? await (avatarImage, mediaAttachments)
+            }
+        }
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, cancelPrefetchingForItemsAt indexPaths: [IndexPath]) {
+        for indexPath in indexPaths {
+            let status = configuration.statuses[indexPath.item]
+            imageDownloader.cancelDownloadingIfNeeded(for: status.account.avatar)
+            status.mediaAttachments.lazy.map(\.url).forEach {
+                imageDownloader.cancelDownloadingIfNeeded(for: $0)
+            }
+        }
     }
 }
