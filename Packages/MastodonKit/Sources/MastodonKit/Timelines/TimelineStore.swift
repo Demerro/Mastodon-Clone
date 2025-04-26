@@ -7,8 +7,7 @@
 
 import Foundation
 
-@MainActor
-public final class TimelineStore {
+public final actor TimelineStore {
     
     private(set) public var statuses = [Status]()
     
@@ -23,22 +22,22 @@ public final class TimelineStore {
 extension TimelineStore {
     
     private func loadPublicTimeline() async throws(Swift.Error) -> [Status] {
-        guard let instanceName = AuthorizationService.shared.instanceName,
-              let accessToken = try? AuthorizationService.shared.getAccessToken(for: instanceName)
+        guard let instanceName = await AuthorizationService.shared.instanceName,
+              let accessToken = try? await AuthorizationService.shared.getAccessToken(for: instanceName)
         else {
             assertionFailure()
-            throw Error.unknown
+            throw MastodonError.unknown(nil)
         }
         let request = PublicTimelineRequest(networkService: .api, instanceHost: instanceName, accessToken: accessToken, maxId: publicTimelineMaxId)
         return try await parseHTMLContentAndSortStatuses(try await request.response())
     }
     
     private func loadHomeTimeline() async throws(Swift.Error) -> [Status] {
-        guard let instanceName = AuthorizationService.shared.instanceName,
-              let accessToken = try? AuthorizationService.shared.getAccessToken(for: instanceName)
+        guard let instanceName = await AuthorizationService.shared.instanceName,
+              let accessToken = try? await AuthorizationService.shared.getAccessToken(for: instanceName)
         else {
             assertionFailure()
-            throw Error.unknown
+            throw MastodonError.unknown(nil)
         }
         let request = HomeTimelineRequest(networkService: .api, instanceHost: instanceName, accessToken: accessToken, maxId: homeTimelineMaxId)
         return try await parseHTMLContentAndSortStatuses(try await request.response())
@@ -101,13 +100,5 @@ extension TimelineStore {
                 .reduce(into: [Status]()) { $0.append($1) }
                 .sorted { $0.id > $1.id }
         }
-    }
-}
-
-extension TimelineStore {
-    
-    public enum Error: Swift.Error {
-        
-        case unknown
     }
 }

@@ -14,5 +14,5 @@ public enum MastodonError: Error {
     
     case decoding(DecodingError)
     
-    case unknown(Error)
+    case unknown(Error?)
 }

@@ -14,9 +14,9 @@ public protocol PostButtonsStackViewDelegate: AnyObject {
     
     func postButtonsStackViewDidTapRepliesButton(_ stackView: PostButtonsStackView)
     
-    func postButtonsStackViewDidTapReblogsButton(_ stackView: PostButtonsStackView)
+    func postButtonsStackViewDidTapReblogsButton(_ stackView: PostButtonsStackView, shouldReblog: Bool)
     
-    func postButtonsStackViewDidTapFavoritesButton(_ stackView: PostButtonsStackView)
+    func postButtonsStackViewDidTapFavoritesButton(_ stackView: PostButtonsStackView, shouldFavourite: Bool)
     
     func postButtonsStackViewDidTapShareButton(_ stackView: PostButtonsStackView)
 }
@@ -67,11 +67,11 @@ public final class PostButtonsStackView: StackView {
         return button
     }()
     
+    public var itemIdentifier: AnyHashable?
+    
     private var needsApplyConfiguration = false
     
-    private(set) var buttonFlags = ButtonFlags()
-    
-    public var configuration: Configuration? {
+    public var configuration = Configuration() {
         didSet { applyConfiguration() }
     }
     
@@ -79,11 +79,13 @@ public final class PostButtonsStackView: StackView {
     
     public override func setupCommon() {
         super.setupCommon()
+        
         distribution = .fillEqually
         addArrangedSubview(repliesButton)
         addArrangedSubview(reblogsButton)
         addArrangedSubview(favoritesButton)
         addArrangedSubview(shareButton)
+        
         setupButtonsActions()
     }
     
@@ -108,16 +110,13 @@ extension PostButtonsStackView {
     }
     
     private func applyConfiguration() {
-        guard let configuration else { return }
-        
         repliesButton.configuration!.title = makeTitleIfNotZero(configuration.repliesCount)
         reblogsButton.configuration!.title = makeTitleIfNotZero(configuration.reblogsCount)
         favoritesButton.configuration!.title = makeTitleIfNotZero(configuration.favoritesCount)
         
-        buttonFlags = configuration.buttonFlags
-        reblogsButton.configuration!.baseForegroundColor = buttonFlags.reblogsButtonToggled ? .systemGreen : .secondaryLabel
-        favoritesButton.configuration!.baseForegroundColor = buttonFlags.favoritesButtonToggled ? .systemYellow : .secondaryLabel
-        favoritesButton.configuration!.image = buttonFlags.favoritesButtonToggled ? UIImage(systemName: "star.fill") : UIImage(systemName: "star")
+        reblogsButton.configuration!.baseForegroundColor = configuration.buttonFlags.reblogsButtonToggled ? .systemGreen : .secondaryLabel
+        favoritesButton.configuration!.baseForegroundColor = configuration.buttonFlags.favoritesButtonToggled ? .systemYellow : .secondaryLabel
+        favoritesButton.configuration!.image = configuration.buttonFlags.favoritesButtonToggled ? UIImage(systemName: "star.fill") : UIImage(systemName: "star")
         
         func makeTitleIfNotZero(_ value: Int) -> String? {
             value == 0 ? nil : value.roundedWithAbbreviations
@@ -133,32 +132,29 @@ extension PostButtonsStackView {
         }, for: .touchUpInside)
         
         reblogsButton.addAction(UIAction { [unowned self] _ in
-            reblogsButton.configuration!.baseForegroundColor = buttonFlags.reblogsButtonToggled ? .secondaryLabel : .systemGreen
-            let number = adjustValue(configuration?.reblogsCount ?? 0, increment: !buttonFlags.reblogsButtonToggled)
-            reblogsButton.configuration!.title = number?.roundedWithAbbreviations
-            configuration?.reblogsCount = number ?? 0
-            buttonFlags.reblogsButtonToggled.toggle()
-            delegate?.postButtonsStackViewDidTapReblogsButton(self)
+            configuration.buttonFlags.reblogsButtonToggled.toggle()
+            delegate?.postButtonsStackViewDidTapReblogsButton(self, shouldReblog: configuration.buttonFlags.reblogsButtonToggled)
+            configuration.reblogsCount += configuration.buttonFlags.reblogsButtonToggled ? 1 : -1
+            guard var reblogsConfiguration = reblogsButton.configuration else { return }
+            reblogsConfiguration.baseForegroundColor = configuration.buttonFlags.reblogsButtonToggled ? .systemGreen : .secondaryLabel
+            reblogsConfiguration.title = configuration.reblogsCount == 0 ? nil : configuration.reblogsCount.roundedWithAbbreviations
+            reblogsButton.configuration = reblogsConfiguration
         }, for: .touchUpInside)
         
         favoritesButton.addAction(UIAction { [unowned self] _ in
-            favoritesButton.configuration!.baseForegroundColor = buttonFlags.favoritesButtonToggled ? .secondaryLabel : .systemYellow
-            favoritesButton.configuration!.image = buttonFlags.favoritesButtonToggled ? UIImage(systemName: "star") : UIImage(systemName: "star.fill")
-//            favoritesButton.configuration!.title = adjustAndFormatNumber(number: configuration?.favoritesCount ?? 0, shouldDecrement: buttonFlags.favoritesButtonToggled)
-            buttonFlags.favoritesButtonToggled.toggle()
-            delegate?.postButtonsStackViewDidTapFavoritesButton(self)
+            configuration.buttonFlags.favoritesButtonToggled.toggle()
+            delegate?.postButtonsStackViewDidTapFavoritesButton(self, shouldFavourite: configuration.buttonFlags.favoritesButtonToggled)
+            configuration.favoritesCount += configuration.buttonFlags.favoritesButtonToggled ? 1 : -1
+            guard var favoritesConfiguration = favoritesButton.configuration else { return }
+            favoritesConfiguration.baseForegroundColor = configuration.buttonFlags.favoritesButtonToggled ? .systemYellow : .secondaryLabel
+            favoritesConfiguration.image = configuration.buttonFlags.favoritesButtonToggled ? UIImage(systemName: "star.fill") : UIImage(systemName: "star")
+            favoritesConfiguration.title = configuration.favoritesCount == 0 ? nil : configuration.favoritesCount.roundedWithAbbreviations
+            favoritesButton.configuration = favoritesConfiguration
         }, for: .touchUpInside)
         
         shareButton.addAction(UIAction { [unowned self] _ in
             delegate?.postButtonsStackViewDidTapShareButton(self)
         }, for: .touchUpInside)
-        
-        func adjustValue(_ value: Int, increment: Bool) -> Int? {
-            guard value > 0 else {
-                return nil
-            }
-            return increment ? value + 1 : value - 1
-        }
     }
 }
 
@@ -166,19 +162,15 @@ extension PostButtonsStackView {
     
     public struct Configuration: Hashable {
         
-        public let repliesCount: Int
+        public var repliesCount: Int = 0
         
-        public var reblogsCount: Int
+        public var reblogsCount: Int = 0
         
-        public var favoritesCount: Int
+        public var favoritesCount: Int = 0
         
-        public let buttonFlags: ButtonFlags
+        public var buttonFlags = ButtonFlags()
         
-        public init(repliesCount: Int, reblogsCount: Int, favoritesCount: Int, buttonFlags: ButtonFlags) {
-            self.repliesCount = repliesCount
-            self.reblogsCount = reblogsCount
-            self.favoritesCount = favoritesCount
-            self.buttonFlags = buttonFlags
+        public init() {
         }
     }
 }
@@ -191,9 +183,7 @@ extension PostButtonsStackView {
         
         public var favoritesButtonToggled = false
         
-        public init(reblogsButtonToggled: Bool = false, favoritesButtonToggled: Bool = false) {
-            self.reblogsButtonToggled = reblogsButtonToggled
-            self.favoritesButtonToggled = favoritesButtonToggled
+        public init() {
         }
     }
 }

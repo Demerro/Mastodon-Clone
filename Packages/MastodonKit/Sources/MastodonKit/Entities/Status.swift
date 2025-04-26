@@ -17,15 +17,17 @@ public struct Status: Sendable, Decodable, Identifiable {
     
     public let spoilerText: String
     
+    public let url: URL
+    
     public let repliesCount: Int
     
-    public let reblogsCount: Int
+    public var reblogsCount: Int
     
-    public let favouritesCount: Int
+    public var favouritesCount: Int
     
-    public let favourited: Bool
+    public var favourited: Bool
     
-    public let reblogged: Bool
+    public var reblogged: Bool
     
     public var content: String
     
@@ -44,6 +46,7 @@ extension Status {
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         sensitive = try container.decode(Bool.self, forKey: .sensitive)
         spoilerText = try container.decode(String.self, forKey: .spoilerText)
+        url = try container.decode(URL.self, forKey: .url)
         repliesCount = try container.decode(Int.self, forKey: .repliesCount)
         reblogsCount = try container.decode(Int.self, forKey: .reblogsCount)
         favouritesCount = try container.decode(Int.self, forKey: .favouritesCount)
@@ -67,6 +70,8 @@ extension Status {
         case sensitive
         
         case spoilerText = "spoiler_text"
+        
+        case url
         
         case repliesCount = "replies_count"
         

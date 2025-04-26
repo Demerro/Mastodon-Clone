@@ -9,30 +9,22 @@ import Foundation
 import os.log
 import NetworkFoundation
 
-public struct HomeTimelineRequest {
+struct HomeTimelineRequest {
     
-    public let networkService: NetworkService
+    let networkService: NetworkService
     
-    public let instanceHost: String
+    let instanceHost: String
     
-    public let accessToken: String
+    let accessToken: String
     
-    public let maxId: String?
+    var maxId: String? = nil
     
-    public let limit: Int
-    
-    public init(networkService: NetworkService, instanceHost: String, accessToken: String, maxId: String? = nil, limit: Int = 20) {
-        self.networkService = networkService
-        self.instanceHost = instanceHost
-        self.accessToken = accessToken
-        self.maxId = maxId
-        self.limit = limit
-    }
+    var limit: Int = 20
 }
 
 extension HomeTimelineRequest: RequestProtocol {
     
-    public func response() async throws(MastodonError) -> [Status] {
+    func response() async throws(MastodonError) -> [Status] {
         Logger.timelines.debug("Starting request for home timeline")
         
         var urlComponents = URLComponents()

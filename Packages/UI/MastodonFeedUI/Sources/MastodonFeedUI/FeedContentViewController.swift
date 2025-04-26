@@ -18,7 +18,9 @@ protocol FeedContentViewControllerDelegate: AnyObject {
     
     func feedContentViewController(_ viewController: FeedContentViewController, didSelectVideoWithURL url: URL, previewImage image: UIImage)
     
-    func feedContentViewController(_ viewController: FeedContentViewController, didSelectURL url: URL)
+    func feedContentViewController(_ viewController: FeedContentViewController, didSelectTextURL textUrl: URL)
+    
+    func feedContentViewController(_ viewController: FeedContentViewController, didShareStatusURL statusUrl: URL)
     
     func feedContentViewControllerDidRefresh(_ viewController: FeedContentViewController)
     
@@ -28,6 +30,18 @@ protocol FeedContentViewControllerDelegate: AnyObject {
 final class FeedContentViewController: ViewController {
     
     private let imageDownloader = ImageDownloader()
+    
+    private let favouritesStore = FavouritesStore()
+    
+    private var favouritesTask: Task<Void, Never>?
+    
+    private var favouritesTaskIsRunning = false
+    
+    private let reblogsStore = ReblogsStore()
+    
+    private var reblogsTask: Task<Void, Never>?
+    
+    private var reblogsTaskIsRunning = false
     
     let collectionView: UICollectionView = {
         let listLayout = UICollectionViewCompositionalLayout.list(using: .init(appearance: .plain))
@@ -81,6 +95,12 @@ extension FeedContentViewController {
             dataSource.apply(snapshot)
         }
     }
+    
+    private func reconfigureItems(_ identifiers: [ItemIdentifier]) {
+        var snapshot = dataSource.snapshot()
+        snapshot.reconfigureItems(identifiers)
+        dataSource.apply(snapshot)
+    }
 }
 
 extension FeedContentViewController {
@@ -90,6 +110,7 @@ extension FeedContentViewController {
             cell.itemIdentifier = itemIdentifier
             cell.delegate = self
             cell.layoutInvalidationDelegate = self
+            cell.buttonsStackView.delegate = self
             
             let status = configuration.statuses[indexPath.item]
             let headerContentConfiguration = PostHeaderStackView.ContentConfiguration(
@@ -99,12 +120,14 @@ extension FeedContentViewController {
                 eyeHidden: !status.sensitive
             )
             
-            let buttonsConfiguration = PostButtonsStackView.Configuration(
-                repliesCount: status.repliesCount,
-                reblogsCount: status.reblogsCount,
-                favoritesCount: status.favouritesCount,
-                buttonFlags: .init(reblogsButtonToggled: status.reblogged, favoritesButtonToggled: status.favourited)
-            )
+            var buttonFlags = PostButtonsStackView.ButtonFlags()
+            buttonFlags.reblogsButtonToggled = status.reblogged
+            buttonFlags.favoritesButtonToggled = status.favourited
+            var buttonsConfiguration = PostButtonsStackView.Configuration()
+            buttonsConfiguration.repliesCount = status.repliesCount
+            buttonsConfiguration.reblogsCount = status.reblogsCount
+            buttonsConfiguration.favoritesCount = status.favouritesCount
+            buttonsConfiguration.buttonFlags = buttonFlags
             
             var spoilerConfiguration = SpoilerView.Configuration()
             spoilerConfiguration.text = status.sensitive ? status.spoilerText : nil
@@ -150,6 +173,7 @@ extension FeedContentViewController {
             cell.itemIdentifier = itemIdentifier
             cell.delegate = self
             cell.layoutInvalidationDelegate = self
+            cell.buttonsStackView.delegate = self
 
             let status = configuration.statuses[indexPath.item]
             
@@ -160,12 +184,14 @@ extension FeedContentViewController {
                 eyeHidden: !status.sensitive
             )
             
-            let buttonsConfiguration = PostButtonsStackView.Configuration(
-                repliesCount: status.repliesCount,
-                reblogsCount: status.reblogsCount,
-                favoritesCount: status.favouritesCount,
-                buttonFlags: .init(reblogsButtonToggled: status.reblogged, favoritesButtonToggled: status.favourited)
-            )
+            var buttonFlags = PostButtonsStackView.ButtonFlags()
+            buttonFlags.reblogsButtonToggled = status.reblogged
+            buttonFlags.favoritesButtonToggled = status.favourited
+            var buttonsConfiguration = PostButtonsStackView.Configuration()
+            buttonsConfiguration.repliesCount = status.repliesCount
+            buttonsConfiguration.reblogsCount = status.reblogsCount
+            buttonsConfiguration.favoritesCount = status.favouritesCount
+            buttonsConfiguration.buttonFlags = buttonFlags
             
             let mediaAttachment = status.mediaAttachments.first!
             let imageAttachmentPreparationConfiguration = ImageAttachmentMosaicStackView.PreparationConfiguration(
@@ -249,20 +275,25 @@ extension FeedContentViewController {
             cell.itemIdentifier = itemIdentifier
             cell.delegate = self
             cell.layoutInvalidationDelegate = self
+            cell.buttonsStackView.delegate = self
             
             let status = configuration.statuses[indexPath.item]
+            
             let headerContentConfiguration = PostHeaderStackView.ContentConfiguration(
                 displayName: status.account.displayName,
                 time: relativeDateTimeFormatter.string(for: status.createdAt)!,
                 username: status.account.username,
                 eyeHidden: !status.sensitive
             )
-            let buttonsConfiguration = PostButtonsStackView.Configuration(
-                repliesCount: status.repliesCount,
-                reblogsCount: status.reblogsCount,
-                favoritesCount: status.favouritesCount,
-                buttonFlags: .init(reblogsButtonToggled: status.reblogged, favoritesButtonToggled: status.favourited)
-            )
+            
+            var buttonFlags = PostButtonsStackView.ButtonFlags()
+            buttonFlags.reblogsButtonToggled = status.reblogged
+            buttonFlags.favoritesButtonToggled = status.favourited
+            var buttonsConfiguration = PostButtonsStackView.Configuration()
+            buttonsConfiguration.repliesCount = status.repliesCount
+            buttonsConfiguration.reblogsCount = status.reblogsCount
+            buttonsConfiguration.favoritesCount = status.favouritesCount
+            buttonsConfiguration.buttonFlags = buttonFlags
             
             let video = status.mediaAttachments.first!
             let previewAspectRatio = video.meta!.original.width / video.meta!.original.height
@@ -329,7 +360,7 @@ extension FeedContentViewController {
     
     struct Configuration {
         
-        let statuses: [Status]
+        var statuses: [Status]
         
         let reloadData: Bool
     }
@@ -348,7 +379,7 @@ extension FeedContentViewController: ImageAttachmentPostCollectionViewCellDelega
     }
     
     func imageAttachmentPostCollectionViewCell(_ cell: ImageAttachmentPostCollectionViewCell, didSelectURL url: URL) {
-        delegate?.feedContentViewController(self, didSelectURL: url)
+        delegate?.feedContentViewController(self, didSelectTextURL: url)
     }
 }
 
@@ -364,14 +395,14 @@ extension FeedContentViewController: VideoPreviewPostCollectionViewCellDelegate 
     }
     
     func videoPreviewPostCollectionViewCell(_ cell: VideoPreviewPostCollectionViewCell, didSelectURL url: URL) {
-        delegate?.feedContentViewController(self, didSelectURL: url)
+        delegate?.feedContentViewController(self, didSelectTextURL: url)
     }
 }
 
 extension FeedContentViewController: TextPostCollectionViewCellDelegate {
     
     func textPostCollectionViewCell(_ cell: TextPostCollectionViewCell, didSelectURL url: URL) {
-        delegate?.feedContentViewController(self, didSelectURL: url)
+        delegate?.feedContentViewController(self, didSelectTextURL: url)
     }
 }
 
@@ -468,5 +499,66 @@ extension FeedContentViewController: UICollectionViewDataSourcePrefetching {
                 imageDownloader.cancelDownloadingIfNeeded(for: $0)
             }
         }
+    }
+}
+
+extension FeedContentViewController: PostButtonsStackViewDelegate {
+    
+    func postButtonsStackViewDidTapRepliesButton(_ stackView: PostButtonsStackView) {
+    }
+    
+    func postButtonsStackViewDidTapReblogsButton(_ stackView: PostButtonsStackView, shouldReblog: Bool) {
+        guard !reblogsTaskIsRunning else {
+            reblogsTask?.cancel()
+            return
+        }
+        guard let id = stackView.itemIdentifier as? ItemIdentifier else { return }
+        reblogsTask = Task {
+            reblogsTaskIsRunning = true; defer { reblogsTaskIsRunning = false }
+            do {
+                shouldReblog ? try await reblogsStore.reblogStatus(by: id) : try await reblogsStore.reblogStatus(by: id)
+                var statuses = configuration.statuses
+                guard let index = statuses.firstIndex(where: { $0.id == id }) else { return }
+                var status = statuses[index]
+                status.reblogged = shouldReblog
+                status.reblogsCount += shouldReblog ? 1 : -1
+                statuses[index] = status
+                configuration = FeedContentViewController.Configuration(statuses: statuses, reloadData: false)
+            } catch MastodonError.network(.clientOrTransportSpecific(URLError.cancelled)) {
+                return
+            } catch {
+                reconfigureItems([id])
+            }
+        }
+    }
+    
+    func postButtonsStackViewDidTapFavoritesButton(_ stackView: PostButtonsStackView, shouldFavourite: Bool) {
+        guard !favouritesTaskIsRunning else {
+            favouritesTask?.cancel()
+            return
+        }
+        guard let id = stackView.itemIdentifier as? ItemIdentifier else { return }
+        favouritesTask = Task {
+            favouritesTaskIsRunning = true; defer { favouritesTaskIsRunning = false }
+            do {
+                shouldFavourite ? try await favouritesStore.favouriteStatus(by: id) : try await favouritesStore.unfavouriteStatus(by: id)
+                var statuses = configuration.statuses
+                guard let index = statuses.firstIndex(where: { $0.id == id }) else { return }
+                var status = statuses[index]
+                status.favourited = shouldFavourite
+                status.favouritesCount += shouldFavourite ? 1 : -1
+                statuses[index] = status
+                configuration = FeedContentViewController.Configuration(statuses: statuses, reloadData: false)
+            } catch MastodonError.network(.clientOrTransportSpecific(URLError.cancelled)) {
+                return
+            } catch {
+                reconfigureItems([id])
+            }
+        }
+    }
+    
+    func postButtonsStackViewDidTapShareButton(_ stackView: PostButtonsStackView) {
+        guard let status = configuration.statuses.first(where: { $0.id == stackView.itemIdentifier as? ItemIdentifier }) else { return }
+        delegate?.feedContentViewController(self, didShareStatusURL: status.url)
     }
 }

@@ -113,7 +113,7 @@ extension FeedContainerViewController {
                 case .local:
                     try await timelineStore.refreshPublicTimeline()
                 }
-                contentViewController.configuration = FeedContentViewController.Configuration(statuses: timelineStore.statuses, reloadData: true)
+                contentViewController.configuration = await FeedContentViewController.Configuration(statuses: timelineStore.statuses, reloadData: true)
                 switchStateViewController(to: contentViewController)
             } catch {
                 switchStateViewController(to: emptyViewController)
@@ -131,7 +131,7 @@ extension FeedContainerViewController {
                 case .local:
                     try await timelineStore.refreshPublicTimeline()
                 }
-                contentViewController.configuration = FeedContentViewController.Configuration(statuses: timelineStore.statuses, reloadData: true)
+                contentViewController.configuration = await FeedContentViewController.Configuration(statuses: timelineStore.statuses, reloadData: true)
             } catch {
                 switchStateViewController(to: emptyViewController)
             }
@@ -151,7 +151,7 @@ extension FeedContainerViewController {
             case .local:
                 try await timelineStore.appendPublicTimeline()
             }
-            contentViewController.configuration = FeedContentViewController.Configuration(statuses: timelineStore.statuses, reloadData: false)
+            contentViewController.configuration = await FeedContentViewController.Configuration(statuses: timelineStore.statuses, reloadData: false)
         }
     }
 }
@@ -183,8 +183,12 @@ extension FeedContainerViewController: FeedContentViewControllerDelegate {
         present(videoDetailsViewController, animated: true)
     }
     
-    func feedContentViewController(_ viewController: FeedContentViewController, didSelectURL url: URL) {
-        present(SFSafariViewController(url: url), animated: true)
+    func feedContentViewController(_ viewController: FeedContentViewController, didSelectTextURL textUrl: URL) {
+        present(SFSafariViewController(url: textUrl), animated: true)
+    }
+    
+    func feedContentViewController(_ viewController: FeedContentViewController, didShareStatusURL statusUrl: URL) {
+        present(UIActivityViewController(activityItems: [statusUrl], applicationActivities: nil), animated: true)
     }
     
     func feedContentViewControllerDidRefresh(_ viewController: FeedContentViewController) {

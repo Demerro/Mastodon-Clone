@@ -17,7 +17,9 @@ public protocol TextPostCollectionViewCellDelegate: AnyObject {
 
 public final class TextPostCollectionViewCell: CollectionViewCell {
     
-    public var itemIdentifier: AnyHashable?
+    public var itemIdentifier: AnyHashable? {
+        didSet { buttonsStackView.itemIdentifier = itemIdentifier }
+    }
     
     internal let headerStackView: PostHeaderStackView = {
         $0.translatesAutoresizingMaskIntoConstraints = false
@@ -42,7 +44,7 @@ public final class TextPostCollectionViewCell: CollectionViewCell {
         return $0
     }(PreviewCardView(frame: .zero))
     
-    internal let buttonsStackView: PostButtonsStackView = {
+    public let buttonsStackView: PostButtonsStackView = {
         $0.translatesAutoresizingMaskIntoConstraints = false
         return $0
     }(PostButtonsStackView(frame: .zero))
@@ -81,6 +83,7 @@ public final class TextPostCollectionViewCell: CollectionViewCell {
     
     public override func prepareForReuse() {
         itemIdentifier = nil
+        buttonsStackView.itemIdentifier = nil
         configuration = Configuration()
         applyConfigurationIfNeeded()
         super.prepareForReuse()
@@ -183,7 +186,7 @@ extension TextPostCollectionViewCell {
         
         public var spoilerConfiguration = SpoilerView.Configuration()
         
-        public var buttonsConfiguration: PostButtonsStackView.Configuration?
+        public var buttonsConfiguration = PostButtonsStackView.Configuration()
         
         public init() {
         }
