@@ -115,10 +115,11 @@ extension ProfileContentViewController {
     
     private func recalculateContentSize(_ contentSize: CGSize) -> CGSize {
         let systemSpacing = 16.0
+        let categorySegmentedControlHeight = profileView.categorySegmentedControl.frame.height
         let safeAreaBottomInset = view.safeAreaInsets.bottom
         let safeAreaTopInset = view.safeAreaInsets.top
-        let maxHeaderHeight = profileView.headerView.bounds.height + systemSpacing
-        let contentHeight = max(contentSize.height, view.frame.height - safeAreaTopInset - safeAreaBottomInset)
+        let maxHeaderHeight = profileView.headerView.bounds.height + systemSpacing + categorySegmentedControlHeight
+        let contentHeight = max(contentSize.height, view.frame.height - safeAreaTopInset - safeAreaBottomInset - categorySegmentedControlHeight)
         return CGSize(width: contentSize.width, height: contentHeight + maxHeaderHeight + safeAreaBottomInset)
     }
     
