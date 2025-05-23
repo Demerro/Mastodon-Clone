@@ -36,6 +36,8 @@ final class ProfileContentViewController: ViewController {
     
     private var contentOffsetsY = [Int: CGFloat]()
     
+    private var needsIgnoreContentSizeChange = false
+    
     private var navigationBarBackgroundView: UIView? {
         navigationController?.navigationBar.value(forKey: valueKey(from: "X2JhY2tncm91bmRWaWV3")) as? UIView
     }
@@ -149,10 +151,12 @@ extension ProfileContentViewController: CategorySegmentedControlDelegate {
 extension ProfileContentViewController: PagingCollectionViewDelegate {
     
     func collectionViewDidBeginPaging(_ collectionView: PagingCollectionView, from fromIndexPath: IndexPath, to toIndexPath: IndexPath) {
+        needsIgnoreContentSizeChange = true
         profileView.categorySegmentedControl.startInteractiveAnimation(toSelectedIndex: toIndexPath.item)
     }
     
     func collectionViewDidEndPaging(_ collectionView: PagingCollectionView, at indexPath: IndexPath) {
+        needsIgnoreContentSizeChange = false
         let selectedIndex = profileView.categorySegmentedControl.state.selectedIndex
         let newIndex = indexPath.item
 
@@ -162,11 +166,14 @@ extension ProfileContentViewController: PagingCollectionViewDelegate {
         } else {
             segmentedControl.cancelInteractiveAnimation()
         }
-
+        
         currentIndex = newIndex
 
-        let savedOffsetY = contentOffsetsY[currentIndex] ?? profileView.containerScrollView.contentOffset.y
-        profileView.overlayScrollView.contentOffset.y = savedOffsetY
+        profileView.overlayScrollView.contentOffset.y = if let offset = contentOffsetsY[currentIndex] {
+            offset
+        } else {
+            profileView.containerScrollView.contentOffset.y
+        }
 
         if let scrollView = viewControllers[currentIndex].view as? UIScrollView {
             profileView.overlayScrollView.contentSize = recalculateContentSize(scrollView.contentSize)
@@ -292,6 +299,7 @@ extension ProfileContentViewController {
 extension ProfileContentViewController: FeedCollectionView.Observer {
     
     func feedCollectionView(_ collectionView: FeedCollectionView, didChangeContentSize contentSize: CGSize) {
+        guard !needsIgnoreContentSizeChange else { return }
         let newContentSize = recalculateContentSize(contentSize)
         profileView.overlayScrollView.contentSize = newContentSize
         profileView.containerScrollView.contentSize = newContentSize
