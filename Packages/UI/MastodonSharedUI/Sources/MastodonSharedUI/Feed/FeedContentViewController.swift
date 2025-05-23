@@ -210,7 +210,7 @@ extension FeedContentViewController {
             let mediaAttachment = status.mediaAttachments.first!
             let imageAttachmentPreparationConfiguration = ImageAttachmentMosaicStackView.PreparationConfiguration(
                 singleImageAspectRatio: mediaAttachment.meta!.original.width / mediaAttachment.meta!.original.height,
-                imagesCount: status.mediaAttachments.filter { $0.type == .image }.count
+                imagesCount: status.mediaAttachments.count
             )
             
             var spoilerConfiguration = SpoilerView.Configuration()
