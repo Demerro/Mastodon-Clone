@@ -73,7 +73,6 @@ public final class VideoDetailsViewController: ViewController {
         view.backgroundColor = .black
         addChild(playerViewController)
         view.addSubview(playerViewController.view)
-        playerViewController.didMove(toParent: self)
         view.addSubview(thumbnailImageView)
         view.addGestureRecognizer(UIPanGestureRecognizer(target: self, action: #selector(handlePanGestureRecognizer)))
     }
@@ -90,6 +89,11 @@ public final class VideoDetailsViewController: ViewController {
             view.trailingAnchor.constraint(equalTo: playerViewController.view.trailingAnchor),
             view.bottomAnchor.constraint(equalTo: playerViewController.view.bottomAnchor),
         ])
+    }
+    
+    public override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        playerViewController.didMove(toParent: self)
     }
     
     public override func viewWillDisappear(_ animated: Bool) {
@@ -148,6 +152,7 @@ extension VideoDetailsViewController: ImageAnimationTransitioningDelegate {
     
     public func willTransitionItem() {
         playerViewController.view.isHidden = true
+        thumbnailImageView.isHidden = true
     }
     
     public var item: TransitionItem? {
@@ -160,5 +165,6 @@ extension VideoDetailsViewController: ImageAnimationTransitioningDelegate {
     
     public func didTransitionItem() {
         playerViewController.view.isHidden = false
+        thumbnailImageView.isHidden = false
     }
 }

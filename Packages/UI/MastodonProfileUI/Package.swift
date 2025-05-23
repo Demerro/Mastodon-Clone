@@ -1,4 +1,4 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 6.1
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -19,6 +19,7 @@ let package = Package(
         .package(path: "MastodonCoreUI"),
         .package(path: "MastodonSharedUI"),
         .package(path: "MastodonKit"),
+        .package(path: "MastodonUtilities"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -32,6 +33,7 @@ let package = Package(
                 .byName(name: "MastodonCoreUI"),
                 .byName(name: "MastodonSharedUI"),
                 .byName(name: "MastodonKit"),
+                .byName(name: "MastodonUtilities")
             ]
         ),
     ]

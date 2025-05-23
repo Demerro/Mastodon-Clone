@@ -61,6 +61,8 @@ extension ImageAnimationController: UIViewControllerAnimatedTransitioning {
         animator.addAnimations { [unowned self] in
             imageView.frame = toItemDelegate.itemFrame(in: containerView)
             imageView.layer.cornerRadius = toItem.cornerRadius
+            imageView.layer.borderColor = toItem.borderColor
+            imageView.layer.borderWidth = toItem.borderWidth
             toView.alpha = 1.0
         }
         animator.addCompletion { [weak self] _ in

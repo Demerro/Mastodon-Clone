@@ -29,7 +29,7 @@ public struct Account {
     
     public let locked: Bool
     
-    public let createdAt: String
+    public let createdAt: Date
     
     public let statusesCount: Int
     
@@ -39,7 +39,7 @@ public struct Account {
     
     public let bot: Bool
     
-    public let fields: [Field]
+    public var fields: [Field]
 }
 
 extension Account {

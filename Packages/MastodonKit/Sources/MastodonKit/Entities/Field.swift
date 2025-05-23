@@ -14,6 +14,12 @@ public struct Field {
     public let value: String
     
     public let verifiedAt: Date?
+    
+    public init(name: String, value: String, verifiedAt: Date?) {
+        self.name = name
+        self.value = value
+        self.verifiedAt = verifiedAt
+    }
 }
 
 extension Field {

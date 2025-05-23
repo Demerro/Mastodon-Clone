@@ -18,5 +18,10 @@ public final class MainFlowController: TabBarController {
     
     public init() {
         super.init(viewControllers: [feedFlowController, profileFlowController])
+        
+        let appearance = UITabBarAppearance()
+        appearance.configureWithDefaultBackground()
+        tabBar.standardAppearance = appearance
+        tabBar.scrollEdgeAppearance = appearance
     }
 }

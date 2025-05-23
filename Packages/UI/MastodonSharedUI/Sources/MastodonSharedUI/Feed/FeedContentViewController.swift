@@ -1,6 +1,6 @@
 //
 //  FeedContentViewController.swift
-//  MastodonFeedUI
+//  MastodonSharedUI
 //
 //  Created by Nikita Prokhorchuk on 25.01.25.
 //
@@ -8,28 +8,23 @@
 import UIKit
 import UIKitFoundation
 import MastodonUtilities
-import MastodonSharedUI
 import MastodonKit
 
 @MainActor
-protocol FeedContentViewControllerDelegate: AnyObject {
+public protocol FeedContentViewControllerDelegate: AnyObject {
     
-    func feedContentViewController(_ viewController: FeedContentViewController, didSelectImage image: UIImage)
+    func feedContentViewController(_ viewController: FeedContentViewController, didSelectImageView imageView: UIImageView)
     
-    func feedContentViewController(_ viewController: FeedContentViewController, didSelectVideoWithURL url: URL, previewImage image: UIImage)
+    func feedContentViewController(_ viewController: FeedContentViewController, didSelectVideoWithURL url: URL, selectionItem: SelectionItem)
     
     func feedContentViewController(_ viewController: FeedContentViewController, didSelectTextURL textUrl: URL)
     
     func feedContentViewController(_ viewController: FeedContentViewController, didShareStatusURL statusUrl: URL)
     
-    func feedContentViewControllerDidRefresh(_ viewController: FeedContentViewController)
-    
     func feedContentViewControllerDidPagination(_ viewController: FeedContentViewController)
 }
 
-final class FeedContentViewController: ViewController {
-    
-    private let imageDownloader = ImageDownloader()
+public final class FeedContentViewController: ViewController {
     
     private let favouritesStore = FavouritesStore()
     
@@ -43,9 +38,9 @@ final class FeedContentViewController: ViewController {
     
     private var reblogsTaskIsRunning = false
     
-    let collectionView: UICollectionView = {
+    public let collectionView: FeedCollectionView = {
         let listLayout = UICollectionViewCompositionalLayout.list(using: .init(appearance: .plain))
-        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: listLayout)
+        let collectionView = FeedCollectionView(frame: .zero, collectionViewLayout: listLayout)
         collectionView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         collectionView.showsHorizontalScrollIndicator = false
         collectionView.delaysContentTouches = false
@@ -59,23 +54,18 @@ final class FeedContentViewController: ViewController {
     
     private lazy var dataSource = makeDataSource()
     
-    var configuration: Configuration = Configuration(statuses: [], reloadData: true) {
+    public var configuration: Configuration = Configuration(statuses: [], reloadData: true) {
         didSet { applyConfiguration() }
     }
     
-    weak var delegate: (any FeedContentViewControllerDelegate)?
+    public weak var delegate: (any FeedContentViewControllerDelegate)?
     
-    private var selectionItem: SelectionItem?
-    
-    override func setupCommon() {
+    public override func setupCommon() {
         collectionView.delegate = self
         collectionView.prefetchDataSource = self
-        collectionView.refreshControl = UIRefreshControl(frame: .zero, primaryAction: UIAction { [unowned self] _ in
-            delegate?.feedContentViewControllerDidRefresh(self)
-        })
     }
     
-    override func loadView() {
+    public override func loadView() {
         view = collectionView
     }
 }
@@ -87,9 +77,11 @@ extension FeedContentViewController {
         snapshot.appendSections([.main])
         snapshot.appendItems(configuration.statuses.map(\.id))
         if configuration.reloadData {
-            dataSource.applySnapshotUsingReloadData(snapshot)
-            if !configuration.statuses.isEmpty {
-                collectionView.scrollToItem(at: [0, 0], at: .top, animated: false)
+            dataSource.applySnapshotUsingReloadData(snapshot) { [unowned self] in
+                collectionView.flashScrollIndicators()
+                if !configuration.statuses.isEmpty {
+                    collectionView.scrollToItem(at: [0, 0], at: .top, animated: false)
+                }
             }
         } else {
             dataSource.apply(snapshot)
@@ -104,6 +96,26 @@ extension FeedContentViewController {
 }
 
 extension FeedContentViewController {
+    
+    private func makeDataSource() -> UICollectionViewDiffableDataSource<Section, ItemIdentifier> {
+        let textPostCellRegistration = makeTextPostCellRegistration()
+        let imageAttachmentCellRegistration = makeImageAttachmentCellRegistration()
+        let videoCellRegistration = makeVideoPreviewCellRegistration()
+        return .init(collectionView: collectionView) { [unowned self] collectionView, indexPath, itemIdentifier in
+            if let mediaAttachment = configuration.statuses[indexPath.item].mediaAttachments.first {
+                switch mediaAttachment.type {
+                case .image:
+                    collectionView.dequeueConfiguredReusableCell(using: imageAttachmentCellRegistration, for: indexPath, item: itemIdentifier)
+                case .video:
+                    collectionView.dequeueConfiguredReusableCell(using: videoCellRegistration, for: indexPath, item: itemIdentifier)
+                default:
+                    collectionView.dequeueConfiguredReusableCell(using: textPostCellRegistration, for: indexPath, item: itemIdentifier)
+                }
+            } else {
+                collectionView.dequeueConfiguredReusableCell(using: textPostCellRegistration, for: indexPath, item: itemIdentifier)
+            }
+        }
+    }
     
     private func makeTextPostCellRegistration() -> UICollectionView.CellRegistration<TextPostCollectionViewCell, ItemIdentifier> {
         .init { [unowned self] cell, indexPath, itemIdentifier in
@@ -150,20 +162,22 @@ extension FeedContentViewController {
             
             cell.configuration = configuration
             
-            Task {
-                async let avatarImage = imageDownloader.loadAnimatedImage(from: status.account.avatar)
+            Task.detached {
+                async let avatarImage = ImageDownloader.shared.loadAnimatedImage(from: status.account.avatar)
                 if let previewImageURL = status.previewCard?.imageURL {
-                    async let previewImage = imageDownloader.loadImage(from: previewImageURL)
+                    async let previewImage = ImageDownloader.shared.loadImage(from: previewImageURL)
                     let (downloadedAvatarImage, downloadedPreviewImage) = try await (avatarImage, previewImage)
-                    guard cell.itemIdentifier as? ItemIdentifier == itemIdentifier else { return }
+                    guard await cell.itemIdentifier as? ItemIdentifier == itemIdentifier else { return }
                     configuration.headerConfiguration = PostHeaderStackView.ImageConfiguration(avatarImage: downloadedAvatarImage)
                     configuration.previewCardConfiguration = PreviewCardView.ImageConfiguration(image: downloadedPreviewImage)
                 } else {
                     let downloadedAvatarImage = try await avatarImage
-                    guard cell.itemIdentifier as? ItemIdentifier == itemIdentifier else { return }
+                    guard await cell.itemIdentifier as? ItemIdentifier == itemIdentifier else { return }
                     configuration.headerConfiguration = PostHeaderStackView.ImageConfiguration(avatarImage: downloadedAvatarImage)
                 }
-                cell.configuration = configuration
+                await MainActor.run {
+                    cell.configuration = configuration
+                }
             }
         }
     }
@@ -196,7 +210,7 @@ extension FeedContentViewController {
             let mediaAttachment = status.mediaAttachments.first!
             let imageAttachmentPreparationConfiguration = ImageAttachmentMosaicStackView.PreparationConfiguration(
                 singleImageAspectRatio: mediaAttachment.meta!.original.width / mediaAttachment.meta!.original.height,
-                imagesCount: status.mediaAttachments.count
+                imagesCount: status.mediaAttachments.filter { $0.type == .image }.count
             )
             
             var spoilerConfiguration = SpoilerView.Configuration()
@@ -214,8 +228,8 @@ extension FeedContentViewController {
             
             cell.configuration = configuration
             
-            Task {
-                async let avatarImage = imageDownloader.loadAnimatedImage(from: status.account.avatar)
+            Task.detached {
+                async let avatarImage = ImageDownloader.shared.loadAnimatedImage(from: status.account.avatar)
                 async let images = loadImages(from: status.mediaAttachments.map(\.previewURL))
                 async let spoilerBlurhashes: [UIImage?] = if status.sensitive {
                     loadBlurHashImages(from: status.mediaAttachments)
@@ -223,20 +237,21 @@ extension FeedContentViewController {
                     []
                 }
                 let (loadedSpoilerBlurhashes, downloadedAvatarImage, downloadedImages) = try await (spoilerBlurhashes, avatarImage, images)
-                guard cell.itemIdentifier as? String == itemIdentifier else { return }
+                guard await cell.itemIdentifier as? String == itemIdentifier else { return }
                 configuration.headerConfiguration = PostHeaderStackView.ImageConfiguration(avatarImage: downloadedAvatarImage)
                 configuration.imageAttachmentMosaicStackViewConfiguration = ImageAttachmentMosaicStackView.ContentConfiguration(images: downloadedImages)
                 configuration.spoilerConfiguration.imageAttachmentMosaicStackViewConfiguration = ImageAttachmentMosaicStackView.ContentConfiguration(images: loadedSpoilerBlurhashes)
-                cell.configuration = configuration
+                await MainActor.run {
+                    cell.configuration = configuration
+                }
             }
         }
         
         @Sendable func loadImages(from urls: [URL]) async -> [UIImage?] {
-            await withTaskGroup(of: (Int, UIImage?).self) { [weak self] taskGroup in
-                guard let self else { return [] }
+            await withTaskGroup(of: (Int, UIImage?).self) { taskGroup in
                 for (index, url) in urls.enumerated() {
                     taskGroup.addTask {
-                        (index, try? await self.imageDownloader.loadImage(from: url))
+                        (index, try? await ImageDownloader.shared.loadImage(from: url))
                     }
                 }
 
@@ -307,7 +322,6 @@ extension FeedContentViewController {
             if status.sensitive {
                 spoilerConfiguration.imageAttachmentMosaicStackViewConfiguration = ImageAttachmentMosaicStackView.PreparationConfiguration(singleImageAspectRatio: previewAspectRatio, imagesCount: 1)
             }
-            
             var configuration = VideoPreviewPostCollectionViewCell.Configuration()
             configuration.headerConfiguration = headerContentConfiguration
             configuration.content = status.content
@@ -317,40 +331,19 @@ extension FeedContentViewController {
             
             cell.configuration = configuration
             
-            Task {
-                async let avatarImage = imageDownloader.loadAnimatedImage(from: status.account.avatar)
-                async let previewImage = imageDownloader.loadImage(from: video.previewURL)
-                let blurhashImage: UIImage? = if status.sensitive, let blurHash = video.blurHash, let meta = video.meta {
-                    UIImage(blurHash: blurHash, size: CGSize(width: meta.small.width, height: meta.small.height))
-                } else {
-                    nil
+            Task.detached {
+                async let avatarImage = ImageDownloader.shared.loadAnimatedImage(from: status.account.avatar)
+                async let previewImage = ImageDownloader.shared.loadImage(from: video.previewURL)
+                if status.sensitive, let blurHash = video.blurHash, let meta = video.meta, let blurhashImage = UIImage(blurHash: blurHash, size: CGSize(width: meta.small.width, height: meta.small.height)) {
+                    configuration.spoilerConfiguration.imageAttachmentMosaicStackViewConfiguration = ImageAttachmentMosaicStackView.ContentConfiguration(images: [blurhashImage])
                 }
                 let (downloadedAvatarImage, downloadedPreviewImage) = try await (avatarImage, previewImage)
-                guard cell.itemIdentifier as? ItemIdentifier == itemIdentifier else { return }
+                guard await cell.itemIdentifier as? ItemIdentifier == itemIdentifier else { return }
                 configuration.headerConfiguration = PostHeaderStackView.ImageConfiguration(avatarImage: downloadedAvatarImage)
                 configuration.videoPreviewViewConfiguration = VideoPreviewView.ContentConfiguration(previewImage: downloadedPreviewImage)
-                configuration.spoilerConfiguration.imageAttachmentMosaicStackViewConfiguration = ImageAttachmentMosaicStackView.ContentConfiguration(images: [blurhashImage])
-                cell.configuration = configuration
-            }
-        }
-    }
-    
-    private func makeDataSource() -> UICollectionViewDiffableDataSource<Section, ItemIdentifier> {
-        let textPostCellRegistration = makeTextPostCellRegistration()
-        let imageAttachmentCellRegistration = makeImageAttachmentCellRegistration()
-        let videoCellRegistration = makeVideoPreviewCellRegistration()
-        return .init(collectionView: collectionView) { [unowned self] collectionView, indexPath, itemIdentifier in
-            if let mediaAttachment = configuration.statuses[indexPath.item].mediaAttachments.first {
-                switch mediaAttachment.type {
-                case .image:
-                    collectionView.dequeueConfiguredReusableCell(using: imageAttachmentCellRegistration, for: indexPath, item: itemIdentifier)
-                case .video:
-                    collectionView.dequeueConfiguredReusableCell(using: videoCellRegistration, for: indexPath, item: itemIdentifier)
-                default:
-                    collectionView.dequeueConfiguredReusableCell(using: textPostCellRegistration, for: indexPath, item: itemIdentifier)
+                await MainActor.run {
+                    cell.configuration = configuration
                 }
-            } else {
-                collectionView.dequeueConfiguredReusableCell(using: textPostCellRegistration, for: indexPath, item: itemIdentifier)
             }
         }
     }
@@ -358,11 +351,16 @@ extension FeedContentViewController {
 
 extension FeedContentViewController {
     
-    struct Configuration {
+    public struct Configuration {
         
-        var statuses: [Status]
+        public var statuses: [Status]
         
-        let reloadData: Bool
+        public let reloadData: Bool
+        
+        public init(statuses: [Status], reloadData: Bool) {
+            self.statuses = statuses
+            self.reloadData = reloadData
+        }
     }
     
     private typealias ItemIdentifier = String
@@ -372,82 +370,40 @@ extension FeedContentViewController {
 
 extension FeedContentViewController: ImageAttachmentPostCollectionViewCellDelegate {
     
-    func imageAttachmentPostCollectionViewCell(_ cell: ImageAttachmentPostCollectionViewCell, didSelectImageView imageView: UIImageView) {
-        guard let image = imageView.image else { return }
-        selectionItem = SelectionItem(view: imageView, image: image)
-        delegate?.feedContentViewController(self, didSelectImage: image)
+    public func imageAttachmentPostCollectionViewCell(_ cell: ImageAttachmentPostCollectionViewCell, didSelectImageView imageView: UIImageView) {
+        delegate?.feedContentViewController(self, didSelectImageView: imageView)
     }
     
-    func imageAttachmentPostCollectionViewCell(_ cell: ImageAttachmentPostCollectionViewCell, didSelectURL url: URL) {
+    public func imageAttachmentPostCollectionViewCell(_ cell: ImageAttachmentPostCollectionViewCell, didSelectURL url: URL) {
         delegate?.feedContentViewController(self, didSelectTextURL: url)
     }
 }
 
 extension FeedContentViewController: VideoPreviewPostCollectionViewCellDelegate {
     
-    func videoPreviewPostCollectionViewCell(_ cell: VideoPreviewPostCollectionViewCell, didSelectImageView imageView: UIImageView) {
+    public func videoPreviewPostCollectionViewCell(_ cell: VideoPreviewPostCollectionViewCell, didSelectImageView imageView: UIImageView) {
         if let status = configuration.statuses.first(where: { $0.id == cell.itemIdentifier as? ItemIdentifier }),
            let videoAttachment = status.mediaAttachments.first {
-            let image = imageView.image!
-            selectionItem = SelectionItem(view: cell.videoPreviewView, image: image)
-            delegate?.feedContentViewController(self, didSelectVideoWithURL: videoAttachment.url, previewImage: image)
+            let selectionItem = SelectionItem(view: cell.videoPreviewView, image: imageView.image!)
+            delegate?.feedContentViewController(self, didSelectVideoWithURL: videoAttachment.url, selectionItem: selectionItem)
         }
     }
     
-    func videoPreviewPostCollectionViewCell(_ cell: VideoPreviewPostCollectionViewCell, didSelectURL url: URL) {
+    public func videoPreviewPostCollectionViewCell(_ cell: VideoPreviewPostCollectionViewCell, didSelectURL url: URL) {
         delegate?.feedContentViewController(self, didSelectTextURL: url)
     }
 }
 
 extension FeedContentViewController: TextPostCollectionViewCellDelegate {
     
-    func textPostCollectionViewCell(_ cell: TextPostCollectionViewCell, didSelectURL url: URL) {
+    public func textPostCollectionViewCell(_ cell: TextPostCollectionViewCell, didSelectURL url: URL) {
         delegate?.feedContentViewController(self, didSelectTextURL: url)
-    }
-}
-
-extension FeedContentViewController {
-    
-    private struct SelectionItem {
-        
-        let view: UIView
-        
-        let image: UIImage
-    }
-}
-
-extension FeedContentViewController: ImageAnimationTransitioningDelegate {
-    
-    func willTransitionItem() {
-        guard let selectionItem else { return }
-        selectionItem.view.alpha = 0.0
-    }
-    
-    var item: TransitionItem? {
-        if let selectionItem {
-            TransitionItem(image: selectionItem.image, cornerRadius: selectionItem.view.layer.cornerRadius)
-        } else {
-            nil
-        }
-    }
-    
-    func itemFrame(in view: UIView) -> CGRect {
-        if let selectionItem {
-            selectionItem.view.superview!.convert(selectionItem.view.frame, to: view)
-        } else {
-            .null
-        }
-    }
-    
-    func didTransitionItem() {
-        guard let selectionItem else { return }
-        selectionItem.view.alpha = 1.0
     }
 }
 
 extension FeedContentViewController: LayoutInvalidationDelegate {
     
-    func invalidateLayout(_ cell: UICollectionViewCell) {
+    public func invalidateLayout(_ cell: UICollectionViewCell) {
         let context = UICollectionViewLayoutInvalidationContext()
         context.invalidateItems(at: [collectionView.indexPath(for: cell)!])
         collectionView.collectionViewLayout.invalidateLayout(with: context)
@@ -464,7 +420,7 @@ extension FeedContentViewController: UICollectionViewDelegate {
 
 extension FeedContentViewController: UIScrollViewDelegate {
     
-    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+    public func scrollViewDidScroll(_ scrollView: UIScrollView) {
         guard scrollView.contentOffset.y > scrollView.contentSize.height - scrollView.frame.height - 100.0 else { return }
         delegate?.feedContentViewControllerDidPagination(self)
     }
@@ -472,16 +428,16 @@ extension FeedContentViewController: UIScrollViewDelegate {
 
 extension FeedContentViewController: UICollectionViewDataSourcePrefetching {
     
-    func collectionView(_ collectionView: UICollectionView, prefetchItemsAt indexPaths: [IndexPath]) {
+    public func collectionView(_ collectionView: UICollectionView, prefetchItemsAt indexPaths: [IndexPath]) {
         for indexPath in indexPaths {
+            guard indexPath.item < configuration.statuses.count else { continue }
             let status = configuration.statuses[indexPath.item]
             Task {
-                async let avatarImage = imageDownloader.loadAnimatedImage(from: status.account.avatar)
-                async let mediaAttachments = withTaskGroup(of: UIImage?.self, returning: [UIImage?].self) { [weak self] taskGroup in
-                    guard let self else { return [] }
+                async let avatarImage = ImageDownloader.shared.loadAnimatedImage(from: status.account.avatar)
+                async let mediaAttachments = withTaskGroup(of: UIImage?.self, returning: [UIImage?].self) { taskGroup in
                     for url in status.mediaAttachments.map(\.url) {
                         taskGroup.addTask {
-                            try? await self.imageDownloader.loadImage(from: url)
+                            try? await ImageDownloader.shared.loadImage(from: url)
                         }
                     }
                     return await taskGroup.reduce(into: []) { $0.append($1) }
@@ -491,12 +447,13 @@ extension FeedContentViewController: UICollectionViewDataSourcePrefetching {
         }
     }
     
-    func collectionView(_ collectionView: UICollectionView, cancelPrefetchingForItemsAt indexPaths: [IndexPath]) {
+    public func collectionView(_ collectionView: UICollectionView, cancelPrefetchingForItemsAt indexPaths: [IndexPath]) {
         for indexPath in indexPaths {
+            guard indexPath.item < configuration.statuses.count else { continue }
             let status = configuration.statuses[indexPath.item]
-            imageDownloader.cancelDownloadingIfNeeded(for: status.account.avatar)
-            status.mediaAttachments.lazy.map(\.url).forEach {
-                imageDownloader.cancelDownloadingIfNeeded(for: $0)
+            ImageDownloader.shared.cancelDownloadingIfNeeded(for: status.account.avatar)
+            for mediaAttachment in status.mediaAttachments {
+                ImageDownloader.shared.cancelDownloadingIfNeeded(for: mediaAttachment.url)
             }
         }
     }
@@ -504,10 +461,10 @@ extension FeedContentViewController: UICollectionViewDataSourcePrefetching {
 
 extension FeedContentViewController: PostButtonsStackViewDelegate {
     
-    func postButtonsStackViewDidTapRepliesButton(_ stackView: PostButtonsStackView) {
+    public func postButtonsStackViewDidTapRepliesButton(_ stackView: PostButtonsStackView) {
     }
     
-    func postButtonsStackViewDidTapReblogsButton(_ stackView: PostButtonsStackView, shouldReblog: Bool) {
+    public func postButtonsStackViewDidTapReblogsButton(_ stackView: PostButtonsStackView, shouldReblog: Bool) {
         guard !reblogsTaskIsRunning else {
             reblogsTask?.cancel()
             return
@@ -532,7 +489,7 @@ extension FeedContentViewController: PostButtonsStackViewDelegate {
         }
     }
     
-    func postButtonsStackViewDidTapFavoritesButton(_ stackView: PostButtonsStackView, shouldFavourite: Bool) {
+    public func postButtonsStackViewDidTapFavoritesButton(_ stackView: PostButtonsStackView, shouldFavourite: Bool) {
         guard !favouritesTaskIsRunning else {
             favouritesTask?.cancel()
             return
@@ -557,7 +514,7 @@ extension FeedContentViewController: PostButtonsStackViewDelegate {
         }
     }
     
-    func postButtonsStackViewDidTapShareButton(_ stackView: PostButtonsStackView) {
+    public func postButtonsStackViewDidTapShareButton(_ stackView: PostButtonsStackView) {
         guard let status = configuration.statuses.first(where: { $0.id == stackView.itemIdentifier as? ItemIdentifier }) else { return }
         delegate?.feedContentViewController(self, didShareStatusURL: status.url)
     }

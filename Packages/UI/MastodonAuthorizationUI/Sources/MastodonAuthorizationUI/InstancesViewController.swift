@@ -21,8 +21,6 @@ final class InstancesViewController: ViewController {
     private let instancesView = InstancesView(frame: .zero)
     
     private let instancesStore = InstancesStore()
-
-    private let imageDownloader = ImageDownloader()
     
     private var isShimmering = false
     
@@ -81,7 +79,7 @@ extension InstancesViewController {
             cell.contentConfiguration = configuration
             guard let url = item.thumbnailURL else { return }
             Task {
-                let image = try? await imageDownloader.loadImage(from: url)
+                let image = try? await ImageDownloader.shared.loadImage(from: url)
                 guard cell.itemIdentifier == itemIdentifier else { return }
                 configuration.image = image
                 cell.contentConfiguration = configuration
@@ -201,7 +199,7 @@ extension InstancesViewController: UICollectionViewDataSourcePrefetching {
         for indexPath in indexPaths {
             guard let url = instancesStore.instances[indexPath.item].thumbnailURL else { continue }
             Task {
-                try await imageDownloader.loadImage(from: url)
+                try await ImageDownloader.shared.loadImage(from: url)
             }
         }
     }
@@ -209,7 +207,7 @@ extension InstancesViewController: UICollectionViewDataSourcePrefetching {
     func collectionView(_ collectionView: UICollectionView, cancelPrefetchingForItemsAt indexPaths: [IndexPath]) {
         for indexPath in indexPaths {
             guard let url = instancesStore.instances[indexPath.item].thumbnailURL else { continue }
-            imageDownloader.cancelDownloadingIfNeeded(for: url)
+            ImageDownloader.shared.cancelDownloadingIfNeeded(for: url)
         }
     }
 }

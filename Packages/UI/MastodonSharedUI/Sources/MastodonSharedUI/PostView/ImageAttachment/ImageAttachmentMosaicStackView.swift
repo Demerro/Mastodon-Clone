@@ -88,8 +88,6 @@ extension ImageAttachmentMosaicStackView {
         imageViews = (0..<configuration.imagesCount).map { _ in makeImageView() }
         
         switch imageViews.count {
-        case 0:
-            rightStackView.isHidden = false
         case 1:
             rightStackView.isHidden = true
             leftStackView.addArrangedSubview(imageViews[0])
@@ -123,6 +121,10 @@ extension ImageAttachmentMosaicStackView {
     private func apply(contentConfiguration configuration: ContentConfiguration) {
         resizingTask?.cancel()
         resizingTask = Task {
+            guard configuration.images.count == imageViews.count else {
+                assertionFailure("Mismatch amount")
+                return
+            }
             let images = await withTaskGroup(of: (Int, UIImage?).self) { [weak self] taskGroup in
                 guard let self else { return [Int: UIImage?]() }
                 for (index, imageView) in imageViews.enumerated() {
