@@ -14,28 +14,30 @@ import osUtilities
 @MainActor
 public final class ImageDownloader {
 
+    public static let shared = ImageDownloader()
+    
     private let cache = NSCache<NSURL, CacheEntryWrapper>()
     
-    public init() {
+    private init() {
     }
 }
 
 extension ImageDownloader {
     
     @discardableResult
-    public func loadImage(from url: URL) async throws -> UIImage? {
-        try await UIImage(data: loadImageData(from: url))
+    public func loadImage(from url: URL, allowedDiskStorage: Bool = false) async throws -> UIImage? {
+        try await UIImage(data: loadImageData(from: url, allowedDiskStorage: allowedDiskStorage))
     }
     
     @discardableResult
-    public func loadAnimatedImage(from url: URL) async throws -> UIImage? {
-        try await UIImage.animatedImage(withGIFData: loadImageData(from: url))
+    public func loadAnimatedImage(from url: URL, allowedDiskStorage: Bool = false) async throws -> UIImage? {
+        try await UIImage.animatedImage(withGIFData: loadImageData(from: url, allowedDiskStorage: allowedDiskStorage))
     }
 }
 
 extension ImageDownloader {
     
-    private func loadImageData(from url: URL) async throws -> Data {
+    private func loadImageData(from url: URL, allowedDiskStorage: Bool = false) async throws -> Data {
         let nsURL = url as NSURL
         
         Logger.imageDownloader.debug("Attempting to load image data for URL: \(url.absoluteString)")
@@ -57,7 +59,11 @@ extension ImageDownloader {
         
         let task = Task {
             Logger.imageDownloader.debug("Started download task for URL: \(url.absoluteString)")
-            return try await NetworkService.imageDownload.data(for: URLRequest(url: url))
+            return if allowedDiskStorage {
+                try await NetworkService.imageDownloadWithCache.data(for: URLRequest(url: url))
+            } else {
+                try await NetworkService.imageDownload.data(for: URLRequest(url: url))
+            }
         }
         
         cache.setObject(CacheEntryWrapper(entry: .inProgress(task)), forKey: nsURL)
@@ -72,6 +78,13 @@ extension ImageDownloader {
             cache.removeObject(forKey: nsURL)
             throw error
         }
+    }
+}
+
+extension ImageDownloader {
+    
+    public func clearCache() {
+        cache.removeAllObjects()
     }
 }
 

@@ -25,8 +25,14 @@ public struct TransitionItem {
     
     public let cornerRadius: CGFloat
     
-    public init(image: UIImage, cornerRadius: CGFloat) {
+    public var borderColor: CGColor? = nil
+    
+    public var borderWidth: CGFloat = 0.0
+    
+    public init(image: UIImage, cornerRadius: CGFloat, borderColor: CGColor? = nil, borderWidth: CGFloat = 0.0) {
         self.image = image
         self.cornerRadius = cornerRadius
+        self.borderColor = borderColor
+        self.borderWidth = borderWidth
     }
 }

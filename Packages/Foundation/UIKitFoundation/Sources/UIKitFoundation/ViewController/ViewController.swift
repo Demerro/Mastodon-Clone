@@ -7,7 +7,9 @@
 
 import UIKit
 
-open class ViewController: UIViewController, ViewControllerProtocol {
+open class ViewController: UIViewController, ViewControllerProtocol, ViewControllerProtocolPrivate {
+    
+    final var setupFlags = SetupFlags()
     
     public init() {
         super.init(nibName: nil, bundle: nil)
@@ -27,7 +29,7 @@ open class ViewController: UIViewController, ViewControllerProtocol {
     
     open override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        setupAfterViewDidLayoutSubviews()
+        _viewDidLayoutSubviews()
     }
     
     open func setupCommon() {

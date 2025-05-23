@@ -55,7 +55,7 @@ final class HeaderView: View {
         return $0
     }(UILabel(frame: .zero))
     
-    private let button: UIButton = {
+    let button: UIButton = {
         var configuration = UIButton.Configuration.borderedProminent()
         configuration.title = "Edit Info"
         configuration.cornerStyle = .large
@@ -70,15 +70,13 @@ final class HeaderView: View {
         return button
     }()
     
-    var configuration: Configuration? {
-        didSet {
-            guard let configuration, configuration != oldValue else { return }
-            apply(configuration: configuration)
-        }
+    var configuration = Configuration() {
+        didSet { apply(configuration: configuration) }
     }
     
     override func setupCommon() {
         super.setupCommon()
+        backgroundColor = .systemBackground
         addSubview(headerImageView)
         addSubview(avatarImageView)
         addSubview(informationStackView)
@@ -95,7 +93,7 @@ final class HeaderView: View {
             headerImageView.topAnchor.constraint(equalTo: topAnchor),
             headerImageView.leadingAnchor.constraint(equalTo: leadingAnchor),
             trailingAnchor.constraint(equalTo: headerImageView.trailingAnchor),
-            headerImageView.heightAnchor.constraint(equalTo: headerImageView.widthAnchor, multiplier: 1.0 / 3.0),
+            headerImageView.heightAnchor.constraint(equalTo: headerImageView.widthAnchor, multiplier: 0.6),
             
             avatarImageView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
             avatarImageView.centerYAnchor.constraint(equalTo: headerImageView.bottomAnchor),
@@ -109,7 +107,7 @@ final class HeaderView: View {
             button.centerYAnchor.constraint(equalTo: displayNameLabel.centerYAnchor),
             layoutMarginsGuide.trailingAnchor.constraint(equalTo: button.trailingAnchor),
             
-            displayNameLabel.topAnchor.constraint(greaterThanOrEqualToSystemSpacingBelow: avatarImageView.bottomAnchor, multiplier: 2.0),
+            displayNameLabel.topAnchor.constraint(equalToSystemSpacingBelow: avatarImageView.bottomAnchor, multiplier: 2.0),
             displayNameLabel.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
             displayNameLabel.trailingAnchor.constraint(lessThanOrEqualTo: button.leadingAnchor),
             
@@ -120,6 +118,7 @@ final class HeaderView: View {
             noteLabel.topAnchor.constraint(equalToSystemSpacingBelow: usernameLabel.bottomAnchor, multiplier: 2.0),
             noteLabel.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
             layoutMarginsGuide.trailingAnchor.constraint(greaterThanOrEqualTo: noteLabel.trailingAnchor),
+            bottomAnchor.constraint(equalTo: noteLabel.bottomAnchor),
         ])
     }
 }
@@ -129,7 +128,6 @@ extension HeaderView {
     private func apply(configuration: Configuration) {
         displayNameLabel.text = configuration.displayName
         usernameLabel.text = configuration.username
-//        noteLabel.attributedText = configuration.note?.htmlAttributedString(with: [.font: UIFont.preferredFont(forTextStyle: .body)])
         informationStackView.configuration = InformationStackView.Configuration(
             posts: configuration.postsCount,
             following: configuration.followingCount,
@@ -137,14 +135,19 @@ extension HeaderView {
         )
         setImageWithTransition(configuration.avatarImage, to: avatarImageView)
         setImageWithTransition(configuration.headerImage, to: headerImageView)
-    }
-}
 
-extension HeaderView {
-    
-    private func setImageWithTransition(_ image: UIImage?, to imageView: UIImageView) {
-        UIView.transition(with: imageView, duration: CATransaction.animationDuration(), options: .transitionCrossDissolve) {
-            imageView.image = image
+        if let note = configuration.note,
+           let html = note.parseHTML(withAttributes: [.font: UIFont.preferredFont(forTextStyle: .body)]) {
+            html.deleteCharacters(in: NSRange(location: html.length - 1, length: 1))
+            noteLabel.attributedText = html
+        } else {
+            noteLabel.attributedText = nil
+        }
+        
+        func setImageWithTransition(_ image: UIImage?, to imageView: UIImageView) {
+            UIView.transition(with: imageView, duration: CATransaction.animationDuration(), options: .transitionCrossDissolve) {
+                imageView.image = image
+            }
         }
     }
 }

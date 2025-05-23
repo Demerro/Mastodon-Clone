@@ -98,13 +98,13 @@ extension VideoPreviewPostCollectionViewCell {
         guard !needsApplyConfiguration else { return }
         needsApplyConfiguration = true
         setNeedsUpdateConstraints()
+        setNeedsLayout()
     }
     
     private func applyConfigurationIfNeeded() {
         guard needsApplyConfiguration else { return }
         needsApplyConfiguration = false
         applyConfiguration()
-        layoutIfNeeded()
     }
     
     private func applyConfiguration() {

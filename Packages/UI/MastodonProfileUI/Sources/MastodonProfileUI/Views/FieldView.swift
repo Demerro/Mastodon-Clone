@@ -19,6 +19,7 @@ final class FieldView: StackView, UIContentView {
     }(UILabel(frame: .zero))
     
     private let valueTextView: UITextView = {
+        $0.backgroundColor = .clear
         $0.textContainer.maximumNumberOfLines = 1
         $0.textContainer.lineFragmentPadding = .zero
         $0.textContainer.lineBreakMode = .byTruncatingTail
@@ -42,6 +43,10 @@ final class FieldView: StackView, UIContentView {
         }
     }
     
+    weak var textViewDelegate: (any UITextViewDelegate)? {
+        didSet { valueTextView.delegate = textViewDelegate }
+    }
+    
     init(configuration: Configuration) {
         super.init(frame: .zero)
         apply(configuration: configuration)
@@ -50,6 +55,9 @@ final class FieldView: StackView, UIContentView {
     override func setupCommon() {
         super.setupCommon()
         
+        let verticalSpacing = 11.0
+        let horizontalSpacing = 16.0
+        layoutMargins = UIEdgeInsets(top: verticalSpacing, left: horizontalSpacing, bottom: verticalSpacing, right: horizontalSpacing)
         axis = .vertical
         preservesSuperviewLayoutMargins = true
         isLayoutMarginsRelativeArrangement = true
@@ -57,24 +65,17 @@ final class FieldView: StackView, UIContentView {
         addArrangedSubview(titleLabel)
         addArrangedSubview(valueTextView)
     }
-    
-    override func layoutMarginsDidChange() {
-        super.layoutMarginsDidChange()
-        let verticalSpacing = 11.0
-        let horizontalSpacing = directionalLayoutMargins.leading
-        layoutMargins = UIEdgeInsets(top: verticalSpacing, left: horizontalSpacing, bottom: verticalSpacing, right: horizontalSpacing)
-    }
 }
 
 extension FieldView {
     
     private func apply(configuration: Configuration) {
-        guard configuration != appliedConfiguration else { return }
         appliedConfiguration = configuration
-        
         titleLabel.text = configuration.title
-//        guard let htmlAttributedString = configuration.value?.htmlAttributedString(with: [.font: UIFont.preferredFont(forTextStyle: .body)]) else { return }
-//        valueTextView.attributedText = htmlAttributedString
+        valueTextView.attributedText = configuration.value?.parseHTML(withAttributes: [
+            .font: UIFont.preferredFont(forTextStyle: .body),
+            .foregroundColor: UIColor.label
+        ])
     }
 }
 

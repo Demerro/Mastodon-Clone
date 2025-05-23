@@ -94,5 +94,19 @@ extension NetworkService {
         return NetworkService(session: URLSession(configuration: config))
     }()
     
+    public static let apiWithCache: NetworkService = {
+        let config = URLSessionConfiguration.default
+        config.httpAdditionalHeaders = ["Content-Type": "application/json"]
+        config.waitsForConnectivity = true
+        config.requestCachePolicy = .returnCacheDataElseLoad
+        return NetworkService(session: URLSession(configuration: config))
+    }()
+    
     public static let imageDownload = NetworkService(session: .shared)
+    
+    public static let imageDownloadWithCache: NetworkService = {
+        let config = URLSessionConfiguration.default
+        config.requestCachePolicy = .returnCacheDataElseLoad
+        return NetworkService(session: URLSession(configuration: config))
+    }()
 }

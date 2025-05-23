@@ -10,6 +10,7 @@ import UIKitFoundation
 import MastodonMainUI
 import MastodonAuthorizationUI
 import MastodonKit
+import MastodonUtilities
 
 public final class ApplicationFlowController: ViewController {
     
@@ -44,5 +45,6 @@ extension ApplicationFlowController: AuthorizationFlowControllerDelegate {
         addChild(mainFlowController)
         mainFlowController.didMove(toParent: self)
         transition(from: viewController, to: mainFlowController, duration: CATransaction.animationDuration(), options: .transitionCrossDissolve, animations: nil)
+        ImageDownloader.shared.clearCache()
     }
 }

@@ -1,15 +1,15 @@
 //
-//  ProfileRequest.swift
-//  MastodonAccountsDomain
+//  VerifyCredentialsRequest.swift
+//  MastodonKit
 //
-//  Created by Nikita Prokhorchuk on 26.12.24.
+//  Created by Nikita Prokhorchuk on 2.05.25.
 //
 
 import Foundation
 import os.log
 import NetworkFoundation
 
-struct ProfileRequest {
+struct VerifyCredentialsRequest {
 
     let networkService: NetworkService
     
@@ -18,10 +18,10 @@ struct ProfileRequest {
     let accessToken: String
 }
 
-extension ProfileRequest: RequestProtocol {
+extension VerifyCredentialsRequest: RequestProtocol {
     
     func response() async throws(MastodonError) -> Account {
-        Logger.profile.debug("Starting request for current account")
+        Logger.account.debug("Starting request for credentials verification")
         
         var urlComponents = URLComponents()
         urlComponents.scheme = "https"
@@ -34,16 +34,16 @@ extension ProfileRequest: RequestProtocol {
         do {
             let data = try await networkService.data(for: request)
             let decodedData = try JSONDecoder.mastodonJSONDecoder.decode(Account.self, from: data)
-            Logger.profile.info("Request for current account succeeded")
+            Logger.account.info("Request for credentials verification succeeded")
             return decodedData
         } catch let networkError as NetworkService.Error {
-            Logger.profile.error("Encountered network error: \(networkError)")
+            Logger.account.error("Encountered network error: \(networkError)")
             throw .network(networkError)
         } catch let decodingError as DecodingError {
-            Logger.profile.error("Encountered decoding error: \(decodingError)")
+            Logger.account.error("Encountered decoding error: \(decodingError)")
             throw .decoding(decodingError)
         } catch let error {
-            Logger.profile.error("Encountered unknown error: \(error)")
+            Logger.account.error("Encountered unknown error: \(error)")
             throw .unknown(error)
         }
     }

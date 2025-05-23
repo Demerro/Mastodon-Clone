@@ -61,6 +61,8 @@ extension ImageInteractiveAnimationController: UIViewControllerInteractiveTransi
         appearanceAnimator.addAnimations { [self] in
             fromView.alpha = 0.0
             imageView.layer.cornerRadius = toItem.cornerRadius
+            imageView.layer.borderColor = toItem.borderColor
+            imageView.layer.borderWidth = toItem.borderWidth
         }
     }
 }

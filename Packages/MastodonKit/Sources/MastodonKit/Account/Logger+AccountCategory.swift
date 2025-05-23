@@ -10,5 +10,5 @@ import osUtilities
 
 extension Logger {
     
-    static let accountStatuses = Logger(subsystem: subsystem, category: "AccountStatuses", flag: "Debug")
+    static let account = Logger(subsystem: subsystem, category: "Account", flag: "Debug")
 }
