@@ -30,6 +30,7 @@
 				MastodonKit,
 				UI/MastodonApplicationUI,
 				UI/MastodonAuthorizationUI,
+				UI/MastodonComposeUI,
 				UI/MastodonCoreUI,
 				UI/MastodonFeedUI,
 				UI/MastodonMainUI,
