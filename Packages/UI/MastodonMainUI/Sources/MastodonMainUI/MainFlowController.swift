@@ -9,6 +9,7 @@ import UIKit
 import UIKitFoundation
 import MastodonFeedUI
 import MastodonProfileUI
+import MastodonComposeUI
 import FoundationUtilities
 
 public final class MainFlowController: TabBarController {
@@ -16,6 +17,11 @@ public final class MainFlowController: TabBarController {
     private let feedFlowController = FeedFlowController()
     
     private let profileFlowController = ProfileFlowController()
+    
+    private let composeViewController: ComposeFlowController = {
+        $0.modalPresentationStyle = .fullScreen
+        return $0
+    }(ComposeFlowController())
     
     private let floatingActionView: FloatingActionView = {
         $0.translatesAutoresizingMaskIntoConstraints = false
@@ -41,6 +47,10 @@ public final class MainFlowController: TabBarController {
             view.trailingAnchor.constraint(equalTo: floatingActionView.trailingAnchor),
             tabBar.topAnchor.constraint(equalTo: floatingActionView.bottomAnchor),
         ])
+        
+        floatingActionView.button.addAction(UIAction { [unowned self] _ in
+            present(composeViewController, animated: true)
+        }, for: .touchUpInside)
     }
     
     public override func viewDidAppear(_ animated: Bool) {
