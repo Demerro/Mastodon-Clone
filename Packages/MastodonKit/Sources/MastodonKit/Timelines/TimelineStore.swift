@@ -32,7 +32,7 @@ extension TimelineStore {
             assertionFailure()
             throw MastodonError.unknown(nil)
         }
-        let request = PublicTimelineRequest(networkService: .api, instanceHost: instanceName, accessToken: accessToken, maxId: publicTimelineMaxId)
+        let request = PublicTimelineRequest(networkService: .api(), instanceHost: instanceName, accessToken: accessToken, maxId: publicTimelineMaxId)
         return try await Utils.parseHTMLContentAndSortStatuses(try await request.response())
     }
     
@@ -43,7 +43,7 @@ extension TimelineStore {
             assertionFailure()
             throw MastodonError.unknown(nil)
         }
-        let request = HomeTimelineRequest(networkService: .api, instanceHost: instanceName, accessToken: accessToken, maxId: homeTimelineMaxId)
+        let request = HomeTimelineRequest(networkService: .api(), instanceHost: instanceName, accessToken: accessToken, maxId: homeTimelineMaxId)
         return try await Utils.parseHTMLContentAndSortStatuses(try await request.response())
     }
 }

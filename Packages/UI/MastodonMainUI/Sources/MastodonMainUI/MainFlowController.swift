@@ -18,11 +18,6 @@ public final class MainFlowController: TabBarController {
     
     private let profileFlowController = ProfileFlowController()
     
-    private let composeViewController: ComposeFlowController = {
-        $0.modalPresentationStyle = .fullScreen
-        return $0
-    }(ComposeFlowController())
-    
     private let floatingActionView: FloatingActionView = {
         $0.translatesAutoresizingMaskIntoConstraints = false
         if $0.visualEffectView.responds(to: setAllowsGroupFilteringSelector), $0.visualEffectView.responds(to: setGroupNameSelector) {
@@ -49,7 +44,9 @@ public final class MainFlowController: TabBarController {
         ])
         
         floatingActionView.button.addAction(UIAction { [unowned self] _ in
-            present(composeViewController, animated: true)
+            let composeFlowController = ComposeFlowController()
+            composeFlowController.modalPresentationStyle = .fullScreen
+            present(composeFlowController, animated: true)
         }, for: .touchUpInside)
     }
     

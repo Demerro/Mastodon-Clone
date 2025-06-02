@@ -1,6 +1,6 @@
 //
 //  RequestProtocol.swift
-//  Network
+//  NetworkFoundation
 //
 //  Created by Nikita Prokhorchuk on 24.11.24.
 //

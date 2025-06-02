@@ -31,27 +31,29 @@ final class MediaLoadingView: View {
         return $0
     }(UIImageView(frame: .zero))
     
-    private let circularProgressView: CircularProgressView = {
+    private let activityIndicatorView: UIActivityIndicatorView = {
         $0.isUserInteractionEnabled = false
         $0.translatesAutoresizingMaskIntoConstraints = false
+        $0.color = .white
         return $0
-    }(CircularProgressView(frame: .zero))
+    }(UIActivityIndicatorView(style: .large))
     
-    private let serverProcessingLabel: UILabel = {
+    private let uploadingLabel: UILabel = {
         $0.translatesAutoresizingMaskIntoConstraints = false
         $0.isUserInteractionEnabled = false
+        $0.font = .preferredFont(forTextStyle: .headline)
         $0.textColor = .white
-        $0.text = "Server processing..."
+        $0.text = "Uploading..."
         return $0
     }(UILabel(frame: .zero))
     
     private var resizingTask: Task<Void, Never>?
     
-    var configuration: any Configuration = LoadingConfiguration() {
+    var configuration: any Configuration = PreparationConfiguration() {
         didSet {
             switch configuration {
-            case let loadingConfiguration as LoadingConfiguration:
-                apply(loadingConfiguration: loadingConfiguration)
+            case let preparationConfiguration as PreparationConfiguration:
+                apply(preparationConfiguration: preparationConfiguration)
             case let loadedConfiguration as LoadedConfiguration:
                 apply(loadedConfiguration: loadedConfiguration)
             default:
@@ -65,8 +67,8 @@ final class MediaLoadingView: View {
         
         addSubview(contentImageView)
         addSubview(visualEffectView)
-        addSubview(circularProgressView)
-        addSubview(serverProcessingLabel)
+        addSubview(activityIndicatorView)
+        addSubview(uploadingLabel)
     }
     
     override func setupConstraints() {
@@ -82,13 +84,11 @@ final class MediaLoadingView: View {
             trailingAnchor.constraint(equalTo: visualEffectView.trailingAnchor),
             bottomAnchor.constraint(equalTo: visualEffectView.bottomAnchor),
             
-            circularProgressView.widthAnchor.constraint(equalToConstant: 50.0),
-            circularProgressView.heightAnchor.constraint(equalTo: circularProgressView.widthAnchor),
-            circularProgressView.centerXAnchor.constraint(equalTo: centerXAnchor),
-            circularProgressView.bottomAnchor.constraint(equalTo: centerYAnchor),
+            activityIndicatorView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            activityIndicatorView.bottomAnchor.constraint(equalTo: centerYAnchor),
             
-            serverProcessingLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
-            serverProcessingLabel.topAnchor.constraint(equalTo: centerYAnchor, constant: 8.0),
+            uploadingLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
+            uploadingLabel.topAnchor.constraint(equalTo: centerYAnchor, constant: 4.0),
         ])
     }
     
@@ -99,11 +99,17 @@ final class MediaLoadingView: View {
 
 extension MediaLoadingView {
     
-    private func apply(loadingConfiguration: LoadingConfiguration) {
-        if visualEffectView.isHidden { visualEffectView.isHidden = false }
-        if circularProgressView.isHidden { circularProgressView.isHidden = false }
-        if serverProcessingLabel.isHidden { serverProcessingLabel.isHidden = false }
-        if let cgImage = loadingConfiguration.image?.cgImage {
+    private func apply(preparationConfiguration: PreparationConfiguration) {
+        visualEffectView.alpha = 1.0
+        visualEffectView.isHidden = false
+        activityIndicatorView.alpha = 1.0
+        activityIndicatorView.isHidden = false
+        uploadingLabel.alpha = 1.0
+        uploadingLabel.isHidden = false
+        
+        activityIndicatorView.startAnimating()
+        
+        if let cgImage = preparationConfiguration.image?.cgImage {
             resizingTask = Task {
                 let image = UIImage(cgImage: cgImage, scale: traitCollection.displayScale, orientation: .up)
                 let thumbnailImage = await image.byPreparingThumbnail(ofSize: contentImageView.bounds.size)
@@ -118,9 +124,17 @@ extension MediaLoadingView {
     }
     
     private func apply(loadedConfiguration: LoadedConfiguration) {
-        if !visualEffectView.isHidden { visualEffectView.isHidden = true }
-        if !circularProgressView.isHidden { circularProgressView.isHidden = true }
-        if !serverProcessingLabel.isHidden { serverProcessingLabel.isHidden = true }
+        activityIndicatorView.stopAnimating()
+        UIViewPropertyAnimator.runningPropertyAnimator(withDuration: CATransaction.animationDuration(), delay: 0.0) { [self] in
+            visualEffectView.alpha = 0.0
+            activityIndicatorView.alpha = 0.0
+            uploadingLabel.alpha = 0.0
+        } completion: { [weak self] _ in
+            guard let self else { return }
+            visualEffectView.isHidden = true
+            activityIndicatorView.isHidden = true
+            uploadingLabel.isHidden = true
+        }
     }
 }
 
@@ -129,11 +143,9 @@ extension MediaLoadingView {
     protocol Configuration: Hashable {
     }
     
-    struct LoadingConfiguration: Configuration {
+    struct PreparationConfiguration: Configuration {
         
         var image: UIImage?
-        
-        var progress: CGFloat?
         
         init() {
         }

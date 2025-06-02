@@ -1,6 +1,6 @@
 //
 //  NetworkService.swift
-//  Network
+//  NetworkFoundation
 //
 //  Created by Nikita Prokhorchuk on 24.11.24.
 //
@@ -15,15 +15,33 @@ public struct NetworkService: Sendable {
     private init(session: URLSession) {
         self.session = session
     }
+}
+
+extension NetworkService {
     
     public func data(for request: URLRequest) async throws(Error) -> Data {
-        Logger.network.debug("Starting network request")
+        Logger.network.debug("Starting data request")
         
-        let data: Data
-        let response: URLResponse
+        return try await performNetworkRequest { [session] in
+            try await session.data(for: request)
+        }
+    }
+    
+    public func upload(for request: URLRequest, from data: Data) async throws(Error) -> Data {
+        Logger.network.debug("Starting upload request")
+        return try await performNetworkRequest { [session] in
+            try await session.upload(for: request, from: data)
+        }
+    }
+}
+
+extension NetworkService {
+    
+    private func performNetworkRequest(task: () async throws -> (Data, URLResponse)) async throws(Error) -> Data {
+        let (data, response): (Data, URLResponse)
         
         do {
-            (data, response) = try await session.data(for: request)
+            (data, response) = try await task()
         } catch let urlError as URLError {
             Logger.network.error("Encountered URL error: \(urlError)")
             throw .clientOrTransportSpecific(urlError)
@@ -37,6 +55,13 @@ public struct NetworkService: Sendable {
             throw .unknown
         }
         
+        try validateResponse(httpResponse)
+        
+        Logger.network.debug("Network request succeeded")
+        return data
+    }
+    
+    private func validateResponse(_ httpResponse: HTTPURLResponse) throws(Error) {
         switch httpResponse.statusCode {
         case 400:
             Logger.network.error("Encountered bad request error")
@@ -50,12 +75,14 @@ public struct NetworkService: Sendable {
         case 404:
             Logger.network.error("Encountered not found error")
             throw .notFound
+        case 422:
+            Logger.network.error("Encountered unprocessable entity error")
+            throw .unprocessableEntity
         case 500:
             Logger.network.error("Encountered server error")
             throw .server(httpResponse)
         case 200...299:
-            Logger.network.debug("Network request succeeded")
-            return data
+            return
         default:
             Logger.network.error("Encountered unknown error")
             throw .unknown
@@ -81,32 +108,41 @@ extension NetworkService {
         
         case notFound
         
+        case unprocessableEntity
+        
         case unknown
     }
 }
 
 extension NetworkService {
     
-    public static let api: NetworkService = {
+    public static func `default`(delegate: URLSessionDelegate? = nil, delegateQueue: OperationQueue? = nil) -> NetworkService {
+        NetworkService(session: URLSession(configuration: .default, delegate: delegate, delegateQueue: delegateQueue))
+    }
+    
+    public static func defaultWithCache(delegate: URLSessionDelegate? = nil, delegateQueue: OperationQueue? = nil) -> NetworkService {
+        let configuration = URLSessionConfiguration.default
+        configuration.requestCachePolicy = .returnCacheDataElseLoad
+        return NetworkService(session: URLSession(configuration: configuration, delegate: delegate, delegateQueue: delegateQueue))
+    }
+    
+    public static func api(delegate: URLSessionDelegate? = nil, delegateQueue: OperationQueue? = nil) -> NetworkService {
+        createNetworkService(withCache: false, delegate: delegate, delegateQueue: delegateQueue)
+    }
+    
+    public static func apiWithCache(delegate: URLSessionDelegate? = nil, delegateQueue: OperationQueue? = nil) -> NetworkService {
+        createNetworkService(withCache: true, delegate: delegate, delegateQueue: delegateQueue)
+    }
+    
+    private static func createNetworkService(withCache: Bool, delegate: URLSessionDelegate?, delegateQueue: OperationQueue?) -> NetworkService {
         let config = URLSessionConfiguration.default
         config.httpAdditionalHeaders = ["Content-Type": "application/json"]
         config.waitsForConnectivity = true
-        return NetworkService(session: URLSession(configuration: config))
-    }()
-    
-    public static let apiWithCache: NetworkService = {
-        let config = URLSessionConfiguration.default
-        config.httpAdditionalHeaders = ["Content-Type": "application/json"]
-        config.waitsForConnectivity = true
-        config.requestCachePolicy = .returnCacheDataElseLoad
-        return NetworkService(session: URLSession(configuration: config))
-    }()
-    
-    public static let imageDownload = NetworkService(session: .shared)
-    
-    public static let imageDownloadWithCache: NetworkService = {
-        let config = URLSessionConfiguration.default
-        config.requestCachePolicy = .returnCacheDataElseLoad
-        return NetworkService(session: URLSession(configuration: config))
-    }()
+        
+        if withCache {
+            config.requestCachePolicy = .returnCacheDataElseLoad
+        }
+        
+        return NetworkService(session: URLSession(configuration: config, delegate: delegate, delegateQueue: delegateQueue))
+    }
 }

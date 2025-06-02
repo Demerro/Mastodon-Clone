@@ -59,7 +59,7 @@ extension StatusesWithoutRepliesStore {
             throw MastodonError.unknown(nil)
         }
         let request = AccountStatusesRequest(
-            networkService: shouldCache ? .apiWithCache : .api,
+            networkService: shouldCache ? .apiWithCache() : .api(),
             instanceHost: instanceName,
             accessToken: accessToken,
             accountID: accountId,
