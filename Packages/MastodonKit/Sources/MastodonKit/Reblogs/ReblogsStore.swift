@@ -22,7 +22,7 @@ extension ReblogsStore {
             assertionFailure()
             throw MastodonError.unknown(nil)
         }
-        let request = ReblogsStatusRequest(networkService: .api(), instanceHost: instanceName, accessToken: accessToken, id: id)
+        let request = ReblogsStatusRequest(networkService: .default(), instanceHost: instanceName, accessToken: accessToken, id: id)
         _ = try await request.response()
     }
     
@@ -33,7 +33,7 @@ extension ReblogsStore {
             assertionFailure()
             throw MastodonError.unknown(nil)
         }
-        let request = UnreblogsStatusRequest(networkService: .api(), instanceHost: instanceName, accessToken: accessToken, id: id)
+        let request = UnreblogsStatusRequest(networkService: .default(), instanceHost: instanceName, accessToken: accessToken, id: id)
         _ = try await request.response()
     }
 }

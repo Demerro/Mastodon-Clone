@@ -26,13 +26,6 @@ extension NetworkService {
             try await session.data(for: request)
         }
     }
-    
-    public func upload(for request: URLRequest, from data: Data) async throws(Error) -> Data {
-        Logger.network.debug("Starting upload request")
-        return try await performNetworkRequest { [session] in
-            try await session.upload(for: request, from: data)
-        }
-    }
 }
 
 extension NetworkService {
@@ -124,25 +117,5 @@ extension NetworkService {
         let configuration = URLSessionConfiguration.default
         configuration.requestCachePolicy = .returnCacheDataElseLoad
         return NetworkService(session: URLSession(configuration: configuration, delegate: delegate, delegateQueue: delegateQueue))
-    }
-    
-    public static func api(delegate: URLSessionDelegate? = nil, delegateQueue: OperationQueue? = nil) -> NetworkService {
-        createNetworkService(withCache: false, delegate: delegate, delegateQueue: delegateQueue)
-    }
-    
-    public static func apiWithCache(delegate: URLSessionDelegate? = nil, delegateQueue: OperationQueue? = nil) -> NetworkService {
-        createNetworkService(withCache: true, delegate: delegate, delegateQueue: delegateQueue)
-    }
-    
-    private static func createNetworkService(withCache: Bool, delegate: URLSessionDelegate?, delegateQueue: OperationQueue?) -> NetworkService {
-        let config = URLSessionConfiguration.default
-        config.httpAdditionalHeaders = ["Content-Type": "application/json"]
-        config.waitsForConnectivity = true
-        
-        if withCache {
-            config.requestCachePolicy = .returnCacheDataElseLoad
-        }
-        
-        return NetworkService(session: URLSession(configuration: config, delegate: delegate, delegateQueue: delegateQueue))
     }
 }

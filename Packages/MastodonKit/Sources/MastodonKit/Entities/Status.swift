@@ -92,3 +92,12 @@ extension Status {
         case previewCard = "card"
     }
 }
+
+extension Status {
+    
+    public enum Visibility: String {
+        case `public`
+        case unlisted
+        case `private`
+    }
+}

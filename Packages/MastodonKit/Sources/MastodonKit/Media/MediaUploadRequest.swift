@@ -9,33 +9,24 @@ import Foundation
 import os.log
 import NetworkFoundation
 
-public struct MediaUploadRequest {
+struct MediaUploadRequest {
     
-    public let networkService: NetworkService
+    let networkService: NetworkService
     
-    public let instanceHost: String
+    let instanceHost: String
     
-    public let accessToken: String
+    let accessToken: String
     
-    public let fileData: Data
+    let fileData: Data
 
-    public let fileName: String
+    let fileName: String
     
-    public let mimeType: String
-    
-    public init(networkService: NetworkService, instanceHost: String, accessToken: String, fileData: Data, fileName: String, mimeType: String) {
-        self.networkService = networkService
-        self.instanceHost = instanceHost
-        self.accessToken = accessToken
-        self.fileData = fileData
-        self.fileName = fileName
-        self.mimeType = mimeType
-    }
+    let mimeType: String
 }
 
 extension MediaUploadRequest: RequestProtocol {
     
-    public func response() async throws(MastodonError) -> MediaAttachment {
+    func response() async throws(MastodonError) -> MediaAttachment {
         Logger.media.info("Starting request for media upload")
         
         var urlComponents = URLComponents()
@@ -49,11 +40,11 @@ extension MediaUploadRequest: RequestProtocol {
         
         var multipartRequest = MultipartRequest()
         multipartRequest.add(key: "file", fileName: fileName, fileMimeType: mimeType, fileData: fileData)
-        
+        request.httpBody = multipartRequest.httpBody
         request.addValue(multipartRequest.httpContentTypeHeaderValue, forHTTPHeaderField: "Content-Type")
         
         do {
-            let data = try await networkService.upload(for: request, from: multipartRequest.httpBody)
+            let data = try await networkService.data(for: request)
             let decodedData = try JSONDecoder.mastodonJSONDecoder.decode(MediaAttachment.self, from: data)
             Logger.media.info("Request for media upload succeeded")
             return decodedData

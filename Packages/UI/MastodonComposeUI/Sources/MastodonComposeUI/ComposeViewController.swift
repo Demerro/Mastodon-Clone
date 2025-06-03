@@ -13,9 +13,21 @@ import UIKitFoundation
 final class ComposeViewController: ViewController {
     
     private let composeView = ComposeView(frame: .zero)
+    
+    private var rightBarButtonItem: UIBarButtonItem!
+    
     private var selectedImagesCount = 0
-    private var mediaUploadingTasks = [Int: Task<Void, Never>]()
-    private var mediaLoadingViews = [Int: (MediaLoadingView, UIButton)]()
+    
+    private var mediaUploadingTasks = [UUID: Task<Void, Never>]()
+    
+    private var mediaLoadingViews = [UUID: (MediaLoadingView, UIButton)]()
+    
+    private let postStatusStore: PostStatusStore
+    
+    init(postStatusStore: PostStatusStore) {
+        self.postStatusStore = postStatusStore
+        super.init()
+    }
     
     override func setupCommon() {
         super.setupCommon()
@@ -33,42 +45,51 @@ final class ComposeViewController: ViewController {
     }
     
     deinit {
-        cancelAllMediaTasks()
+        for (_, task) in mediaUploadingTasks {
+            task.cancel()
+        }
     }
     
     private func configureNavigationBar() {
         title = "New Post"
         
-        let leftBarButtonItem = UIBarButtonItem(
-            title: "Cancel",
-            primaryAction: UIAction { [unowned self] _ in
-                presentingViewController?.dismiss(animated: true)
-            }
-        )
+        let leftBarButtonItem = UIBarButtonItem(title: "Cancel", primaryAction: UIAction { [unowned self] _ in
+            presentConfirmationAlert()
+        })
         leftBarButtonItem.tintColor = .systemRed
         navigationItem.leftBarButtonItem = leftBarButtonItem
-        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Publish")
+        
+        rightBarButtonItem = UIBarButtonItem(title: "Publish", primaryAction: UIAction { [unowned self] _ in
+            Task {
+                let visibility: Status.Visibility = switch composeView.toolbar.visibilityButtonState {
+                case .public: .public
+                case .followersOnly: .private
+                case .unlisted: .unlisted
+                }
+                try await postStatusStore.uploadStatus(
+                    status: composeView.textView.text,
+                    spoilerText: composeView.spoilerTextField.text.unsafelyUnwrapped,
+                    visibility: visibility,
+                )
+            }
+        })
+        rightBarButtonItem.isEnabled = false
+        navigationItem.rightBarButtonItem = rightBarButtonItem
     }
     
     private func configureComposeView() {
         composeView.textView.delegate = self
         composeView.toolbar.delegate = self
     }
-    
-    private func cancelAllMediaTasks() {
-        for (_, task) in mediaUploadingTasks {
-            task.cancel()
-        }
-    }
 }
 
 extension ComposeViewController {
     
-    private func addMediaLoadingView(for image: UIImage, at index: Int) {
+    private func addMediaLoadingView(for image: UIImage, id: UUID) {
         let mediaLoadingView = createMediaLoadingView(with: image)
         composeView.stackView.addArrangedSubview(mediaLoadingView)
 
-        let cancelButton = createCancelButton(for: index)
+        let cancelButton = createCancelButton(forStorageId: id)
         composeView.scrollView.addSubview(cancelButton)
         
         NSLayoutConstraint.activate([
@@ -78,7 +99,7 @@ extension ComposeViewController {
         ])
         composeView.stackView.layoutIfNeeded()
         
-        mediaLoadingViews[index] = (mediaLoadingView, cancelButton)
+        mediaLoadingViews[id] = (mediaLoadingView, cancelButton)
     }
     
     private func createMediaLoadingView(with image: UIImage) -> MediaLoadingView {
@@ -89,7 +110,7 @@ extension ComposeViewController {
         return mediaLoadingView
     }
     
-    private func createCancelButton(for index: Int) -> UIButton {
+    private func createCancelButton(forStorageId id: UUID) -> UIButton {
         var configuration = UIButton.Configuration.borderless()
         configuration.image = UIImage(systemName: "minus.circle.fill")!
         configuration.preferredSymbolConfigurationForImage = .preferringMulticolor()
@@ -99,8 +120,17 @@ extension ComposeViewController {
         
         button.addAction(
             UIAction { [unowned self] _ in
-                removeMediaLoadingView(at: index)
-                mediaUploadingTasks[index]?.cancel()
+                if let mediaUploadingTask = mediaUploadingTasks[id] {
+                    if mediaUploadingTask.isCancelled {
+                        Task { try await postStatusStore.removeMediaAttachment(withStorageId: id) }
+                    } else {
+                        mediaUploadingTask.cancel()
+                        mediaUploadingTasks.removeValue(forKey: id)
+                    }
+                } else {
+                    Task { try await postStatusStore.removeMediaAttachment(withStorageId: id) }
+                }
+                removeMediaLoadingView(with: id)
             },
             for: .touchUpInside
         )
@@ -108,12 +138,13 @@ extension ComposeViewController {
         return button
     }
 
-    private func removeMediaLoadingView(at index: Int) {
+    private func removeMediaLoadingView(with id: UUID) {
         selectedImagesCount -= 1
         composeView.toolbar.addPhotoButtonIsEnabled = selectedImagesCount < 4
+        rightBarButtonItem.isEnabled = !postStatusStore.mediaAttachments.isEmpty || !composeView.textView.text.isEmpty
         
-        guard let (mediaLoadingView, cancelButton) = mediaLoadingViews[index] else {
-            assertionFailure("No media loading view found at index \(index)")
+        guard let (mediaLoadingView, cancelButton) = mediaLoadingViews[id] else {
+            assertionFailure("No media loading view found for storage id \(id)")
             return
         }
         
@@ -145,89 +176,90 @@ extension ComposeViewController {
         }
     }
     
-    private func presentErrorAlert(with message: String) {
-        let alertController = UIAlertController(title: "An error has occured", message: message, preferredStyle: .alert)
+    private func presentErrorAlert() {
+        let alertController = UIAlertController(title: "An error has occurred", message: "Try again later.", preferredStyle: .alert)
         alertController.addAction(UIAlertAction(title: "Ok", style: .cancel))
+        present(alertController, animated: true)
+    }
+    
+    private func presentConfirmationAlert() {
+        let alertController = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        alertController.addAction(UIAlertAction(title: "Discard", style: .destructive, handler: { [unowned self] _ in
+            presentingViewController?.dismiss(animated: true)
+        }))
+        alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         present(alertController, animated: true)
     }
 }
 
 extension ComposeViewController {
     
-    private func uploadImage(_ image: UIImage, at index: Int) {
-        mediaUploadingTasks[index] = Task {
-            guard let data = image.pngData() else {
-                assertionFailure("Failed to convert image to PNG data")
+    private func uploadImage(_ image: UIImage, id: UUID) {
+        mediaUploadingTasks[id] = Task {
+            guard let data = image.jpegData(compressionQuality: 1.0) else {
+                assertionFailure("Failed to convert image to JPEG data")
                 return
             }
-            
-            await uploadMedia(
-                data: data,
-                fileName: "\(UUID().uuidString).png",
-                mimeType: "image/png",
-                at: index
-            )
+            do {
+                try await postStatusStore.uploadMedia(data: data, fileName: "\(UUID().uuidString).jpeg", mimeType: "image/jpeg", storageId: id)
+                await MainActor.run {
+                    mediaLoadingViews[id]?.0.configuration = MediaLoadingView.LoadedConfiguration()
+                    rightBarButtonItem.isEnabled = true
+                }
+            } catch let mastodonError as MastodonError {
+                if !isCancellationError(mastodonError) {
+                    presentErrorAlert()
+                }
+                removeMediaLoadingView(with: id)
+            } catch {
+                preconditionFailure("Unexpected error during image upload: \(error)")
+            }
         }
     }
     
-    private func uploadVideo(_ videoData: Data, at index: Int) {
-        mediaUploadingTasks[index] = Task {
-            await uploadMedia(
-                data: videoData,
-                fileName: "\(UUID().uuidString).mp4",
-                mimeType: "video/mp4",
-                at: index
-            )
+    private func uploadVideo(_ videoData: Data, id: UUID) {
+        mediaUploadingTasks[id] = Task {
+            do {
+                try await postStatusStore.uploadMedia(data: videoData, fileName: "\(UUID().uuidString).mp4", mimeType: "video/mp4", storageId: id)
+                await MainActor.run {
+                    mediaLoadingViews[id]?.0.configuration = MediaLoadingView.LoadedConfiguration()
+                    rightBarButtonItem.isEnabled = true
+                }
+            } catch let mastodonError as MastodonError {
+                if !isCancellationError(mastodonError) {
+                    presentErrorAlert()
+                }
+                removeMediaLoadingView(with: id)
+            } catch {
+                preconditionFailure("Unexpected error during video upload: \(error)")
+            }
         }
     }
     
-    private func uploadMedia(data: Data, fileName: String, mimeType: String, at index: Int) async {
-        let authService = AuthorizationService.shared
-        guard let instanceName = authService.instanceName,
-              let token = try? authService.getAccessToken(for: instanceName)
-        else {
-            assertionFailure("No instance or access token found")
-            return
-        }
-        
-        do {
-            let request = MediaUploadRequest(
-                networkService: .default(),
-                instanceHost: instanceName,
-                accessToken: token,
-                fileData: data,
-                fileName: fileName,
-                mimeType: mimeType
-            )
-            
-            _ = try await request.response()
-            await MainActor.run {
-                mediaLoadingViews[index]?.0.configuration = MediaLoadingView.LoadedConfiguration()
-            }
-        } catch {
-            await MainActor.run {
-                removeMediaLoadingView(at: index)
-                presentErrorAlert(with: error.localizedDescription)
-            }
+    private func isCancellationError(_ mastodonError: MastodonError) -> Bool {
+        if case let .network(networkError) = mastodonError,
+                  case let .clientOrTransportSpecific(urlError) = networkError,
+                  urlError.code == URLError.cancelled {
+            true
+        } else {
+            false
         }
     }
 }
 
 extension ComposeViewController {
     
-    private func handleImageSelection(_ itemProvider: NSItemProvider, at index: Int) {
+    private func handleImageSelection(_ itemProvider: NSItemProvider, with id: UUID) {
         itemProvider.loadObject(ofClass: UIImage.self) { [weak self] image, error in
             guard let self, error == nil, let image = image as? UIImage else { return }
-            
             DispatchQueue.main.async {
-                self.addMediaLoadingView(for: image, at: index)
+                self.addMediaLoadingView(for: image, id: id)
             }
-            
-            self.uploadImage(image, at: index)
+            self.uploadImage(image, id: id)
         }
     }
     
-    private func handleLivePhotoSelection(_ itemProvider: NSItemProvider, at index: Int) {
+    private func handleLivePhotoSelection(_ itemProvider: NSItemProvider, with id: UUID) {
         itemProvider.loadObject(ofClass: PHLivePhoto.self) { [weak self] livePhoto, error in
             guard let self, error == nil, let livePhoto = livePhoto as? PHLivePhoto else { return }
             
@@ -241,26 +273,26 @@ extension ComposeViewController {
                 guard error == nil, let image = UIImage(data: imageData as Data) else { return }
                 
                 DispatchQueue.main.async {
-                    self.addMediaLoadingView(for: image, at: index)
+                    self.addMediaLoadingView(for: image, id: id)
                 }
                 
-                self.uploadImage(image, at: index)
+                self.uploadImage(image, id: id)
             }
         }
     }
     
-    private func handleVideoSelection(_ itemProvider: NSItemProvider, at index: Int) {
+    private func handleVideoSelection(_ itemProvider: NSItemProvider, with id: UUID) {
         itemProvider.loadFileRepresentation(forTypeIdentifier: UTType.movie.identifier) { [weak self] url, error in
             guard let self, error == nil, let url, let image = getFirstFrame(from: url) else { return }
             
             DispatchQueue.main.async {
-                self.addMediaLoadingView(for: image, at: index)
+                self.addMediaLoadingView(for: image, id: id)
             }
         }
         
         itemProvider.loadDataRepresentation(forTypeIdentifier: UTType.movie.identifier) { [weak self] data, error in
             guard let self, error == nil, let data else { return }
-            self.uploadVideo(data, at: index)
+            self.uploadVideo(data, id: id)
         }
     }
 }
@@ -271,6 +303,7 @@ extension ComposeViewController: UITextViewDelegate {
         let composeTextView = textView as! ComposeTextView
         composeView.toolbar.symbolCount = Constants.maxPostSymbolsCount - composeTextView.text.count
         composeTextView.placeholderLabel.isHidden = !composeTextView.text.isEmpty
+        rightBarButtonItem.isEnabled = !postStatusStore.mediaAttachments.isEmpty || !composeTextView.text.isEmpty
     }
     
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
@@ -288,12 +321,9 @@ extension ComposeViewController: UITextFieldDelegate {
 extension ComposeViewController: Toolbar.Delegate {
     
     func toolbarDidSelectPhotoButton(_ toolbar: Toolbar) {
-        presentPhotoPickerController()
-    }
-    
-    private func presentPhotoPickerController() {
+        assert(1...4 ~= selectedImagesCount)
         var configuration = PHPickerConfiguration(photoLibrary: .shared())
-        configuration.selectionLimit = 4
+        configuration.selectionLimit = Constants.maxPostImageAttachmentCount - selectedImagesCount
         configuration.preferredAssetRepresentationMode = .current
         let pickerViewController = PHPickerViewController(configuration: configuration)
         pickerViewController.delegate = self
@@ -302,33 +332,33 @@ extension ComposeViewController: Toolbar.Delegate {
     
     func toolbarDidSelectExclamationmarkButton(_ toolbar: Toolbar) {
         composeView.spoilerTextField.isDescendant(of: composeView.stackView) ? removeSpoilerTextField() : addSpoilerTextField()
-    }
-    
-    private func addSpoilerTextField() {
-        composeView.spoilerTextField.delegate = self
-        composeView.stackView.insertArrangedSubview(composeView.spoilerTextField, at: 0)
         
-        UIViewPropertyAnimator.runningPropertyAnimator(
-            withDuration: CATransaction.animationDuration(),
-            delay: 0.0
-        ) { [composeView] in
-            composeView.spoilerTextField.alpha = 1.0
-            composeView.spoilerTextField.isHidden = false
+        func addSpoilerTextField() {
+            composeView.spoilerTextField.delegate = self
+            composeView.stackView.insertArrangedSubview(composeView.spoilerTextField, at: 0)
+            
+            UIViewPropertyAnimator.runningPropertyAnimator(
+                withDuration: CATransaction.animationDuration(),
+                delay: 0.0
+            ) { [composeView] in
+                composeView.spoilerTextField.alpha = 1.0
+                composeView.spoilerTextField.isHidden = false
+            }
         }
-    }
-    
-    private func removeSpoilerTextField() {
-        UIViewPropertyAnimator.runningPropertyAnimator(
-            withDuration: CATransaction.animationDuration(),
-            delay: 0.0
-        ) { [composeView] in
-            composeView.spoilerTextField.alpha = 0.0
-            composeView.spoilerTextField.isHidden = true
-        } completion: { [weak self] _ in
-            guard let self else { return }
-            composeView.textView.becomeFirstResponder()
-            composeView.spoilerTextField.removeFromSuperview()
-            composeView.spoilerTextField.delegate = nil
+        
+        func removeSpoilerTextField() {
+            UIViewPropertyAnimator.runningPropertyAnimator(
+                withDuration: CATransaction.animationDuration(),
+                delay: 0.0
+            ) { [composeView] in
+                composeView.spoilerTextField.alpha = 0.0
+                composeView.spoilerTextField.isHidden = true
+            } completion: { [weak self] _ in
+                guard let self else { return }
+                composeView.textView.becomeFirstResponder()
+                composeView.spoilerTextField.removeFromSuperview()
+                composeView.spoilerTextField.delegate = nil
+            }
         }
     }
 }
@@ -344,15 +374,15 @@ extension ComposeViewController: PHPickerViewControllerDelegate {
         selectedImagesCount += results.count
         composeView.toolbar.addPhotoButtonIsEnabled = selectedImagesCount < 4
         
-        for (index, result) in results.enumerated() {
+        for result in results {
+            let storageId = UUID()
             let itemProvider = result.itemProvider
-            
             if itemProvider.canLoadObject(ofClass: UIImage.self) {
-                handleImageSelection(itemProvider, at: index)
+                handleImageSelection(itemProvider, with: storageId)
             } else if itemProvider.canLoadObject(ofClass: PHLivePhoto.self) {
-                handleLivePhotoSelection(itemProvider, at: index)
+                handleLivePhotoSelection(itemProvider, with: storageId)
             } else if itemProvider.hasItemConformingToTypeIdentifier(UTType.movie.identifier) {
-                handleVideoSelection(itemProvider, at: index)
+                handleVideoSelection(itemProvider, with: storageId)
             }
         }
     }

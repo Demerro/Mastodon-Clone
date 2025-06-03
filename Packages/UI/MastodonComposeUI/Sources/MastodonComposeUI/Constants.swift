@@ -8,4 +8,6 @@
 struct Constants {
     
     static let maxPostSymbolsCount = 500
+    
+    static let maxPostImageAttachmentCount = 4
 }

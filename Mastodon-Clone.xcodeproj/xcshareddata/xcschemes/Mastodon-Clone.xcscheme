@@ -52,7 +52,12 @@
       </BuildableProductRunnable>
       <EnvironmentVariables>
          <EnvironmentVariable
-            key = "com.demerro.MastodonKit.Media.Debug"
+            key = "com.demerro.NetworkFoundation.NetworkService.Debug"
+            value = "YES"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "com.demerro.MastodonKit.Timelines.Debug"
             value = "YES"
             isEnabled = "YES">
          </EnvironmentVariable>

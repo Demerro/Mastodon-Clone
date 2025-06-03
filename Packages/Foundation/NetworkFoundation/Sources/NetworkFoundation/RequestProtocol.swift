@@ -9,7 +9,7 @@ import Foundation
 
 public protocol RequestProtocol {
   
-    associatedtype `Type`: Decodable
+    associatedtype `Type`
     
     associatedtype Error: Swift.Error
     

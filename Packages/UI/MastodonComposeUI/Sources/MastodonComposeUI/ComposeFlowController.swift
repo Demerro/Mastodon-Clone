@@ -7,12 +7,12 @@
 
 import UIKit
 import UIKitFoundation
+import MastodonKit
 
 public final class ComposeFlowController: NavigationController {
     
-    private let composeViewController = ComposeViewController()
-    
     public init() {
+        let composeViewController = ComposeViewController(postStatusStore: PostStatusStore())
         super.init(rootViewController: composeViewController)
     }
 }

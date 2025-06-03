@@ -22,7 +22,7 @@ extension FavouritesStore {
             assertionFailure()
             throw MastodonError.unknown(nil)
         }
-        let request = FavouriteStatusRequest(networkService: .api(), instanceHost: instanceName, accessToken: accessToken, id: id)
+        let request = FavouriteStatusRequest(networkService: .default(), instanceHost: instanceName, accessToken: accessToken, id: id)
         _ = try await request.response()
     }
     
@@ -33,7 +33,7 @@ extension FavouritesStore {
             assertionFailure()
             throw MastodonError.unknown(nil)
         }
-        let request = UnfavouriteStatusRequest(networkService: .api(), instanceHost: instanceName, accessToken: accessToken, id: id)
+        let request = UnfavouriteStatusRequest(networkService: .default(), instanceHost: instanceName, accessToken: accessToken, id: id)
         _ = try await request.response()
     }
 }
