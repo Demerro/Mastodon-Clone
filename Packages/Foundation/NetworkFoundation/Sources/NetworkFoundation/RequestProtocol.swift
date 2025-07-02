@@ -1,6 +1,6 @@
 //
 //  RequestProtocol.swift
-//  Network
+//  NetworkFoundation
 //
 //  Created by Nikita Prokhorchuk on 24.11.24.
 //
@@ -9,7 +9,7 @@ import Foundation
 
 public protocol RequestProtocol {
   
-    associatedtype `Type`: Decodable
+    associatedtype `Type`
     
     associatedtype Error: Swift.Error
     

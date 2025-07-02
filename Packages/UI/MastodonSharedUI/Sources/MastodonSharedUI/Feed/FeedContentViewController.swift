@@ -210,7 +210,7 @@ extension FeedContentViewController {
             let mediaAttachment = status.mediaAttachments.first!
             let imageAttachmentPreparationConfiguration = ImageAttachmentMosaicStackView.PreparationConfiguration(
                 singleImageAspectRatio: mediaAttachment.meta!.original.width / mediaAttachment.meta!.original.height,
-                imagesCount: status.mediaAttachments.filter { $0.type == .image }.count
+                imagesCount: status.mediaAttachments.count
             )
             
             var spoilerConfiguration = SpoilerView.Configuration()
@@ -383,9 +383,9 @@ extension FeedContentViewController: VideoPreviewPostCollectionViewCellDelegate 
     
     public func videoPreviewPostCollectionViewCell(_ cell: VideoPreviewPostCollectionViewCell, didSelectImageView imageView: UIImageView) {
         if let status = configuration.statuses.first(where: { $0.id == cell.itemIdentifier as? ItemIdentifier }),
-           let videoAttachment = status.mediaAttachments.first {
+           let videoAttachmentURL = status.mediaAttachments.first?.url {
             let selectionItem = SelectionItem(view: cell.videoPreviewView, image: imageView.image!)
-            delegate?.feedContentViewController(self, didSelectVideoWithURL: videoAttachment.url, selectionItem: selectionItem)
+            delegate?.feedContentViewController(self, didSelectVideoWithURL: videoAttachmentURL, selectionItem: selectionItem)
         }
     }
     
@@ -435,7 +435,7 @@ extension FeedContentViewController: UICollectionViewDataSourcePrefetching {
             Task {
                 async let avatarImage = ImageDownloader.shared.loadAnimatedImage(from: status.account.avatar)
                 async let mediaAttachments = withTaskGroup(of: UIImage?.self, returning: [UIImage?].self) { taskGroup in
-                    for url in status.mediaAttachments.map(\.url) {
+                    for url in status.mediaAttachments.compactMap(\.url) {
                         taskGroup.addTask {
                             try? await ImageDownloader.shared.loadImage(from: url)
                         }
@@ -452,8 +452,8 @@ extension FeedContentViewController: UICollectionViewDataSourcePrefetching {
             guard indexPath.item < configuration.statuses.count else { continue }
             let status = configuration.statuses[indexPath.item]
             ImageDownloader.shared.cancelDownloadingIfNeeded(for: status.account.avatar)
-            for mediaAttachment in status.mediaAttachments {
-                ImageDownloader.shared.cancelDownloadingIfNeeded(for: mediaAttachment.url)
+            for url in status.mediaAttachments.compactMap(\.url) {
+                ImageDownloader.shared.cancelDownloadingIfNeeded(for: url)
             }
         }
     }

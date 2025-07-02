@@ -13,7 +13,7 @@ public struct MediaAttachment: Sendable, Decodable, Identifiable {
     
     public let type: MediaType
     
-    public let url: URL
+    public let url: URL?
     
     public let previewURL: URL
     

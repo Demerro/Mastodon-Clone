@@ -44,10 +44,10 @@ extension AccountStore {
             throw MastodonError.unknown(nil)
         }
         var account = if let username {
-            try await AccountRequest(networkService: .api, instanceHost: instanceName, accessToken: accessToken, acct: username)
+            try await AccountRequest(networkService: .default(), instanceHost: instanceName, accessToken: accessToken, acct: username)
                 .response()
         } else {
-            try await VerifyCredentialsRequest(networkService: .apiWithCache, instanceHost: instanceName, accessToken: accessToken)
+            try await VerifyCredentialsRequest(networkService: .defaultWithCache(), instanceHost: instanceName, accessToken: accessToken)
                 .response()
         }
         account.fields.insert(Field(name: "Joined", value: dateFormatter.string(from: account.createdAt), verifiedAt: nil), at: 0)

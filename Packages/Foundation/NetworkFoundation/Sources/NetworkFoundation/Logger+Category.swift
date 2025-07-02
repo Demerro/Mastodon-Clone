@@ -1,6 +1,6 @@
 //
 //  Logger+Category.swift
-//  Network
+//  NetworkFoundation
 //
 //  Created by Nikita Prokhorchuk on 8.12.24.
 //

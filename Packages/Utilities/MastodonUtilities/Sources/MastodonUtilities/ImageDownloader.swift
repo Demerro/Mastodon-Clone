@@ -60,9 +60,9 @@ extension ImageDownloader {
         let task = Task {
             Logger.imageDownloader.debug("Started download task for URL: \(url.absoluteString)")
             return if allowedDiskStorage {
-                try await NetworkService.imageDownloadWithCache.data(for: URLRequest(url: url))
+                try await NetworkService.defaultWithCache().data(for: URLRequest(url: url))
             } else {
-                try await NetworkService.imageDownload.data(for: URLRequest(url: url))
+                try await NetworkService.default().data(for: URLRequest(url: url))
             }
         }
         

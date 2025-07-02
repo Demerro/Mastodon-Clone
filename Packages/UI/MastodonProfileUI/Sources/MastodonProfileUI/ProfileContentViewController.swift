@@ -36,9 +36,7 @@ final class ProfileContentViewController: ViewController {
     
     private var contentOffsetsY = [Int: CGFloat]()
     
-    private var navigationBarBackgroundView: UIView? {
-        navigationController?.navigationBar.value(forKey: valueKey(from: "X2JhY2tncm91bmRWaWV3")) as? UIView
-    }
+    private var flags = Flags()
     
     var headerConfiguration = HeaderView.Configuration() {
         didSet { profileView.headerView.configuration = headerConfiguration }
@@ -97,16 +95,15 @@ final class ProfileContentViewController: ViewController {
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        
-        for subview in navigationBarBackgroundView?.subviews ?? [] where subview is UIVisualEffectView {
-            let visualEffectView = subview as! UIVisualEffectView
+        guard !flags.viewDidAppearVisitedOnce else { return }
+        flags.viewDidAppearVisitedOnce = true
+        if let visualEffectView = navigationController?.navigationBar.visualEffectView {
             let setAllowsGroupFilteringSelector = NSSelectorFromEncodedString("X3NldEFsbG93c0dyb3VwRmlsdGVyaW5nOg==") // _setAllowsGroupFiltering:
             let setGroupNameSelector = NSSelectorFromEncodedString("X3NldEdyb3VwTmFtZTo=") // _setGroupName:
             if visualEffectView.responds(to: setGroupNameSelector), visualEffectView.responds(to: setAllowsGroupFilteringSelector) {
                 visualEffectView.perform(setAllowsGroupFilteringSelector, with: true)
                 visualEffectView.perform(setGroupNameSelector, with: CategorySegmentedControl.visualEffectGroupName)
             }
-            break
         }
     }
 }
@@ -115,10 +112,11 @@ extension ProfileContentViewController {
     
     private func recalculateContentSize(_ contentSize: CGSize) -> CGSize {
         let systemSpacing = 16.0
+        let categorySegmentedControlHeight = profileView.categorySegmentedControl.frame.height
         let safeAreaBottomInset = view.safeAreaInsets.bottom
         let safeAreaTopInset = view.safeAreaInsets.top
-        let maxHeaderHeight = profileView.headerView.bounds.height + systemSpacing
-        let contentHeight = max(contentSize.height, view.frame.height - safeAreaTopInset - safeAreaBottomInset)
+        let maxHeaderHeight = profileView.headerView.bounds.height + systemSpacing + categorySegmentedControlHeight
+        let contentHeight = max(contentSize.height, view.frame.height - safeAreaTopInset - safeAreaBottomInset - categorySegmentedControlHeight)
         return CGSize(width: contentSize.width, height: contentHeight + maxHeaderHeight + safeAreaBottomInset)
     }
     
@@ -148,10 +146,12 @@ extension ProfileContentViewController: CategorySegmentedControlDelegate {
 extension ProfileContentViewController: PagingCollectionViewDelegate {
     
     func collectionViewDidBeginPaging(_ collectionView: PagingCollectionView, from fromIndexPath: IndexPath, to toIndexPath: IndexPath) {
+        flags.needsIgnoreContentSizeChange = true
         profileView.categorySegmentedControl.startInteractiveAnimation(toSelectedIndex: toIndexPath.item)
     }
     
     func collectionViewDidEndPaging(_ collectionView: PagingCollectionView, at indexPath: IndexPath) {
+        flags.needsIgnoreContentSizeChange = false
         let selectedIndex = profileView.categorySegmentedControl.state.selectedIndex
         let newIndex = indexPath.item
 
@@ -161,11 +161,14 @@ extension ProfileContentViewController: PagingCollectionViewDelegate {
         } else {
             segmentedControl.cancelInteractiveAnimation()
         }
-
+        
         currentIndex = newIndex
 
-        let savedOffsetY = contentOffsetsY[currentIndex] ?? profileView.containerScrollView.contentOffset.y
-        profileView.overlayScrollView.contentOffset.y = savedOffsetY
+        profileView.overlayScrollView.contentOffset.y = if let offset = contentOffsetsY[currentIndex] {
+            offset
+        } else {
+            profileView.containerScrollView.contentOffset.y
+        }
 
         if let scrollView = viewControllers[currentIndex].view as? UIScrollView {
             profileView.overlayScrollView.contentSize = recalculateContentSize(scrollView.contentSize)
@@ -234,8 +237,8 @@ extension ProfileContentViewController: UIScrollViewDelegate {
         }
         
         func updateNavigationBarAlpha(with progress: CGFloat) {
-            guard let navigationBarBackgroundView else { return }
-            navigationBarBackgroundView.alpha = clamp(progress, min: 0.0, max: 1.0)
+            guard let backgroundView = navigationController?.navigationBar.backgroundView else { return }
+            backgroundView.alpha = clamp(progress, min: 0.0, max: 1.0)
         }
         
         func applyHeaderImageTransformIfNeeded(for offsetY: CGFloat) {
@@ -286,11 +289,19 @@ extension ProfileContentViewController {
         
         var reloadData = false
     }
+    
+    private struct Flags {
+        
+        var viewDidAppearVisitedOnce = false
+        
+        var needsIgnoreContentSizeChange = false
+    }
 }
 
 extension ProfileContentViewController: FeedCollectionView.Observer {
     
     func feedCollectionView(_ collectionView: FeedCollectionView, didChangeContentSize contentSize: CGSize) {
+        guard !flags.needsIgnoreContentSizeChange else { return }
         let newContentSize = recalculateContentSize(contentSize)
         profileView.overlayScrollView.contentSize = newContentSize
         profileView.containerScrollView.contentSize = newContentSize
