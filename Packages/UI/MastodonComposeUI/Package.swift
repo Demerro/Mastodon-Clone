@@ -4,31 +4,26 @@
 import PackageDescription
 
 let package = Package(
-    name: "MastodonMainUI",
+    name: "MastodonComposeUI",
     platforms: [.iOS(.v15)],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
-            name: "MastodonMainUI",
-            targets: ["MastodonMainUI"]),
+            name: "MastodonComposeUI",
+            targets: ["MastodonComposeUI"]),
     ],
     dependencies: [
         .package(path: "UIKitFoundation"),
-        .package(path: "MastodonFeedUI"),
-        .package(path: "MastodonProfileUI"),
-        .package(path: "MastodonComposeUI"),
+        .package(path: "SwiftUtilities"),
+        .package(path: "MastodonKit"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "MastodonMainUI",
-            dependencies: [
-                .byName(name: "UIKitFoundation"),
-                .byName(name: "MastodonFeedUI"),
-                .byName(name: "MastodonProfileUI"),
-                .byName(name: "MastodonComposeUI"),
-            ]
+            name: "MastodonComposeUI",
+            dependencies: ["UIKitFoundation", "SwiftUtilities", "MastodonKit"]
         ),
-    ]
+    ],
+    swiftLanguageModes: [.v5]
 )

@@ -53,7 +53,7 @@ extension AuthorizationService {
                 return
             }
             Task {
-                let accessToken = try await ObtainTokenRequest(networkService: .api, instanceHost: instanceHost, code: code).response().accessToken
+                let accessToken = try await ObtainTokenRequest(networkService: .default(), instanceHost: instanceHost, code: code).response().accessToken
                 try? self.saveAccessToken(accessToken, for: instanceHost)
                 UserDefaults.standard.set(instanceHost, forKey: "instance_name")
                 completion?()
