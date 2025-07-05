@@ -57,7 +57,7 @@ extension ImageInteractiveAnimationController: UIViewControllerInteractiveTransi
         containerView.addSubview(fromView)
         containerView.addSubview(imageView)
         
-        appearanceAnimator = UIViewPropertyAnimator(duration: 0.0, timingParameters: UISpringTimingParameters(dampingRatio: 0.825, frequencyResponse: 0.3))
+        appearanceAnimator = UIViewPropertyAnimator(duration: 0.0, timingParameters: UISpringTimingParameters(frequencyResponse: 0.5))
         appearanceAnimator.addAnimations { [self] in
             fromView.alpha = 0.0
             imageView.layer.cornerRadius = toItem.cornerRadius
@@ -78,22 +78,27 @@ extension ImageInteractiveAnimationController {
         transitionContext.updateInteractiveTransition(percentageComplete)
     }
     
-    public func completeTransition(withoutFinishing: Bool) {
+    public func completeTransition(withoutFinishing: Bool, with gestureVelocity: CGPoint) {
         guard let transitionContext else { return }
         appearanceAnimator.isReversed = withoutFinishing
         
         let containerView = transitionContext.containerView
 
-        let frame: CGRect = if withoutFinishing {
-            fromItemDelegate.itemFrame(in: containerView)
+        let toFrame: CGRect
+        let fromFrame: CGRect
+        if withoutFinishing {
+            toFrame = fromItemDelegate.itemFrame(in: containerView)
+            fromFrame = toItemDelegate.itemFrame(in: containerView)
         } else {
-            toItemDelegate.itemFrame(in: containerView)
+            toFrame = toItemDelegate.itemFrame(in: containerView)
+            fromFrame = fromItemDelegate.itemFrame(in: containerView)
         }
         
-        let animator = UIViewPropertyAnimator(duration: 0.0, timingParameters: UISpringTimingParameters(dampingRatio: 0.825, frequencyResponse: 0.3))
+        let velocity = initialAnimationVelocity(for: gestureVelocity, from: fromFrame.center, to: toFrame.center)
+        let animator = UIViewPropertyAnimator(duration: 0.0, timingParameters: UISpringTimingParameters(frequencyResponse: 0.5, initialVelocity: velocity))
         animator.addAnimations { [self] in
             imageView.transform = .identity
-            imageView.frame = frame
+            imageView.frame = toFrame
         }
         animator.addCompletion { [weak self] _ in
             guard let self else { return }
@@ -107,6 +112,22 @@ extension ImageInteractiveAnimationController {
         }
         animator.startAnimation()
         appearanceAnimator.continueAnimation(withTimingParameters: nil, durationFactor: animator.duration / appearanceAnimator.duration)
+    }
+}
+
+extension ImageInteractiveAnimationController {
+    
+    private func initialAnimationVelocity(for gestureVelocity: CGPoint, from currentPosition: CGPoint, to finalPosition: CGPoint) -> CGVector {
+        var animationVelocity = CGVector.zero
+        let xDistance = finalPosition.x - currentPosition.x
+        let yDistance = finalPosition.y - currentPosition.y
+        if xDistance != 0.0 {
+            animationVelocity.dx = gestureVelocity.x / xDistance
+        }
+        if yDistance != 0.0 {
+            animationVelocity.dy = gestureVelocity.y / yDistance
+        }
+        return animationVelocity
     }
 }
 

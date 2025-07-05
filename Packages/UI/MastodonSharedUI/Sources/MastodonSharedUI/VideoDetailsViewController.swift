@@ -31,6 +31,8 @@ public final class VideoDetailsViewController: ViewController {
         return $0
     }(AVPlayerViewController())
     
+    private var animationFinished = false
+    
     public weak var interactiveAnimationController: ImageInteractiveAnimationController?
     
     private(set) public var isInteractivelyDismissing = false
@@ -106,21 +108,20 @@ extension VideoDetailsViewController {
     
     @objc
     private func handlePanGestureRecognizer(_ gestureRecognizer: UIPanGestureRecognizer) {
-        let percentageComplete = gestureRecognizer.translation(in: nil).y / view.frame.height
+        let percentageComplete = gestureRecognizer.translation(in: view).y / view.frame.height
+        animationFinished = percentageComplete > 0.2
         switch gestureRecognizer.state {
         case .began:
             if let currentFrame { thumbnailImage = currentFrame }
             isInteractivelyDismissing = true
-            dismiss(animated: true)
-        case .changed:
-            interactiveAnimationController?.update(with: percentageComplete, translation: gestureRecognizer.translation(in: nil))
-        case .ended:
-            isInteractivelyDismissing = false
-            let animationFinished = percentageComplete > 0.2
-            interactiveAnimationController?.completeTransition(withoutFinishing: !animationFinished)
-            if animationFinished {
+            dismiss(animated: true) { [unowned self] in
                 delegate?.videoDetailsViewControllerDidFinish(self)
             }
+        case .changed:
+            interactiveAnimationController?.update(with: percentageComplete, translation: gestureRecognizer.translation(in: view))
+        case .ended:
+            isInteractivelyDismissing = false
+            interactiveAnimationController?.completeTransition(withoutFinishing: !animationFinished, with: gestureRecognizer.velocity(in: view))
         default:
             break
         }

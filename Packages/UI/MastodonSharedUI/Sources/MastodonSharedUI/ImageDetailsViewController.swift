@@ -45,6 +45,8 @@ public final class ImageDetailsViewController: ViewController {
         return $0
     }(UIButton())
     
+    private var animationFinished = false
+    
     public weak var interactiveAnimationController: ImageInteractiveAnimationController?
     
     private(set) public var isInteractivelyDismissing = false
@@ -107,20 +109,21 @@ extension ImageDetailsViewController {
     @objc
     private func handlePanGestureRecognizer(_ gestureRecognizer: UIPanGestureRecognizer) {
         guard scrollView.zoomScale <= 1.0 else { return }
-        let percentageComplete = gestureRecognizer.translation(in: nil).y / view.frame.height
+        let percentageComplete = gestureRecognizer.translation(in: scrollView).y / view.frame.height
+        animationFinished = percentageComplete > 0.2
         switch gestureRecognizer.state {
         case .began:
             isInteractivelyDismissing = true
-            dismiss(animated: true)
+            dismiss(animated: true) { [unowned self] in
+                if animationFinished {
+                    delegate?.imageDetailsViewControllerDidFinish(self)
+                }
+            }
         case .changed:
-            interactiveAnimationController?.update(with: percentageComplete, translation: gestureRecognizer.translation(in: nil))
+            interactiveAnimationController?.update(with: percentageComplete, translation: gestureRecognizer.translation(in: scrollView))
         case .ended:
             isInteractivelyDismissing = false
-            let animationFinished = percentageComplete > 0.2
-            interactiveAnimationController?.completeTransition(withoutFinishing: !animationFinished)
-            if animationFinished {
-                delegate?.imageDetailsViewControllerDidFinish(self)
-            }
+            interactiveAnimationController?.completeTransition(withoutFinishing: !animationFinished, with: gestureRecognizer.velocity(in: scrollView))
         default:
             break
         }

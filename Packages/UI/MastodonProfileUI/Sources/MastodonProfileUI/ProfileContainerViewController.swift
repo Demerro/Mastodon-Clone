@@ -20,9 +20,9 @@ final class ProfileContainerViewController: ViewController {
     
     let contentViewController = ProfileContentViewController()
     
-    private var imageDetailsViewController: ImageDetailsViewController!
+    private var imageDetailsViewController: ImageDetailsViewController? = nil
     
-    private var videoDetailsViewController: VideoDetailsViewController!
+    private var videoDetailsViewController: VideoDetailsViewController? = nil
     
     private var selectionItem: SelectionItem?
     
@@ -172,7 +172,7 @@ extension ProfileContainerViewController: EmptyViewControllerDelegate {
 extension ProfileContainerViewController: ProfileContentViewControllerDelegate {
     
     func profileContentViewController(_ viewController: ProfileContentViewController, didSelectImageView imageView: UIImageView) {
-        guard let image = imageView.image else { return }
+        guard imageDetailsViewController == nil, let image = imageView.image else { return }
         selectionItem = SelectionItem(view: imageView, image: image)
         showImageDetails(for: image)
     }
@@ -200,9 +200,9 @@ extension ProfileContainerViewController: UIViewControllerTransitioningDelegate 
     
     func animationController(forPresented presented: UIViewController, presenting: UIViewController, source: UIViewController) -> (any UIViewControllerAnimatedTransitioning)? {
         if presented === imageDetailsViewController {
-            ImageAnimationController(fromItemDelegate: self, toItemDelegate: imageDetailsViewController)
+            ImageAnimationController(fromItemDelegate: self, toItemDelegate: imageDetailsViewController!)
         } else if presented === videoDetailsViewController {
-            ImageAnimationController(fromItemDelegate: self, toItemDelegate: videoDetailsViewController)
+            ImageAnimationController(fromItemDelegate: self, toItemDelegate: videoDetailsViewController!)
         } else {
             nil
         }
@@ -210,9 +210,9 @@ extension ProfileContainerViewController: UIViewControllerTransitioningDelegate 
     
     func animationController(forDismissed dismissed: UIViewController) -> (any UIViewControllerAnimatedTransitioning)? {
         if dismissed === imageDetailsViewController {
-            ImageAnimationController(fromItemDelegate: imageDetailsViewController, toItemDelegate: self)
+            ImageAnimationController(fromItemDelegate: imageDetailsViewController!, toItemDelegate: self)
         } else if dismissed === videoDetailsViewController {
-            ImageAnimationController(fromItemDelegate: videoDetailsViewController, toItemDelegate: self)
+            ImageAnimationController(fromItemDelegate: videoDetailsViewController!, toItemDelegate: self)
         } else {
             nil
         }
@@ -236,7 +236,7 @@ extension ProfileContainerViewController: UIViewControllerTransitioningDelegate 
 extension ProfileContainerViewController: FeedContentViewControllerDelegate {
     
     func feedContentViewController(_ viewController: MastodonSharedUI.FeedContentViewController, didSelectImageView imageView: UIImageView) {
-        guard let image = imageView.image else { return }
+        guard imageDetailsViewController?.presentedViewController == nil, let image = imageView.image else { return }
         selectionItem = SelectionItem(view: imageView, image: image)
         showImageDetails(for: image)
     }

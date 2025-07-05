@@ -57,7 +57,7 @@ extension ImageAnimationController: UIViewControllerAnimatedTransitioning {
         containerView.layoutIfNeeded()
         toView.alpha = 0.0
         
-        let animator = UIViewPropertyAnimator(duration: 0.0, timingParameters: UISpringTimingParameters(dampingRatio: 0.825, frequencyResponse: 0.3))
+        let animator = UIViewPropertyAnimator(duration: 0.0, timingParameters: UISpringTimingParameters(frequencyResponse: 0.3))
         animator.addAnimations { [unowned self] in
             imageView.frame = toItemDelegate.itemFrame(in: containerView)
             imageView.layer.cornerRadius = toItem.cornerRadius
