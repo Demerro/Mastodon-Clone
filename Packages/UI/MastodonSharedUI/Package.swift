@@ -16,6 +16,7 @@ let package = Package(
         .package(path: "MastodonCoreUI"),
         .package(path: "UIKitUtilities"),
         .package(path: "MastodonUtilities"),
+        .package(path: "MastodonKit"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -26,6 +27,7 @@ let package = Package(
                 "MastodonCoreUI",
                 "UIKitUtilities",
                 "MastodonUtilities",
+                "MastodonKit",
             ]
         ),
     ],

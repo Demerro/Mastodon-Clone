@@ -67,8 +67,6 @@ public final class PostButtonsStackView: StackView {
         return button
     }()
     
-    public var itemIdentifier: AnyHashable?
-    
     private var needsApplyConfiguration = false
     
     public var configuration = Configuration() {
