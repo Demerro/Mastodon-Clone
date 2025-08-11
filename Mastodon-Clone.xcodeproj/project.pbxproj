@@ -25,6 +25,7 @@
 		69A2781C2CF235980058CD2F /* Exceptions for "Packages" folder in "Mastodon-Clone" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Foundation/NetworkFoundation,
 				Foundation/UIKitFoundation,
 				MastodonApplicationDelegate,
 				MastodonKit,
@@ -186,6 +187,8 @@
 /* Begin XCBuildConfiguration section */
 		69A278022CF232420058CD2F /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = 69A277F02CF232400058CD2F /* Mastodon-Clone */;
+			baseConfigurationReferenceRelativePath = Configuration.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -221,6 +224,8 @@
 		};
 		69A278032CF232420058CD2F /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = 69A277F02CF232400058CD2F /* Mastodon-Clone */;
+			baseConfigurationReferenceRelativePath = Configuration.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
