@@ -8,7 +8,7 @@
 import UIKit
 
 @MainActor
-protocol LayoutInvalidationDelegate: AnyObject {
+public protocol LayoutInvalidationDelegate: AnyObject {
     
     func invalidateLayout(_ cell: UICollectionViewCell)
 }
