@@ -70,10 +70,6 @@ public final class VideoPreviewView: View {
         
         addSubview(durationLabelBackgroundView)
         durationLabelBackgroundView.addSubview(durationLabel)
-        
-        RunLoop.current.add(Timer(timeInterval: 0.0, repeats: false) { [self] _ in
-            MainActor.assumeIsolated { playImageViewBackground.layer.cornerRadius = playImageViewBackground.frame.width / 2.0 }
-        }, forMode: .common)
     }
     
     public override func setupConstraints() {
@@ -100,6 +96,12 @@ public final class VideoPreviewView: View {
             durationLabelBackgroundView.trailingAnchor.constraint(equalToSystemSpacingAfter: durationLabel.trailingAnchor, multiplier: 0.5),
             durationLabelBackgroundView.bottomAnchor.constraint(equalToSystemSpacingBelow: durationLabel.bottomAnchor, multiplier: 0.5),
         ])
+    }
+    
+    public override func setupAfterLayoutSubviews() {
+        super.setupAfterLayoutSubviews()
+        playImageViewBackground.layoutIfNeeded()
+        playImageViewBackground.layer.cornerRadius = playImageViewBackground.frame.width / 2.0
     }
     
     public override func updateConstraints() {

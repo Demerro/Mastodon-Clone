@@ -92,10 +92,6 @@ public final class PostHeaderStackView: StackView {
             toggleEye()
             delegate?.postHeaderStackViewDidTapEyeButton(self)
         }, for: .touchUpInside)
-        
-        RunLoop.current.add(Timer(timeInterval: 0.0, repeats: false) { [self] _ in
-            MainActor.assumeIsolated { avatarImageView.layer.cornerRadius = avatarImageView.frame.width / 4.0 }
-        }, forMode: .common)
     }
     
     public override func setupConstraints() {
@@ -104,6 +100,12 @@ public final class PostHeaderStackView: StackView {
             avatarImageView.widthAnchor.constraint(equalToConstant: 50.0),
             avatarImageView.heightAnchor.constraint(equalTo: avatarImageView.widthAnchor),
         ])
+    }
+    
+    public override func setupAfterLayoutSubviews() {
+        super.setupAfterLayoutSubviews()
+        avatarImageView.layoutIfNeeded()
+        avatarImageView.layer.cornerRadius = avatarImageView.frame.width / 4.0
     }
     
     public override func updateConstraints() {
