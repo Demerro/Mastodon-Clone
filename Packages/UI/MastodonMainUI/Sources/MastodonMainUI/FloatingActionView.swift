@@ -24,7 +24,12 @@ final class FloatingActionView: View {
         return button
     }()
     
+    private var drawVisitedOnce = false
+    
     override func draw(_ rect: CGRect) {
+        guard !drawVisitedOnce else { return }
+        drawVisitedOnce = true
+        
         let path = UIBezierPath()
         path.move(to: CGPoint(x: 0.0, y: rect.maxY))
         path.addCurve(
