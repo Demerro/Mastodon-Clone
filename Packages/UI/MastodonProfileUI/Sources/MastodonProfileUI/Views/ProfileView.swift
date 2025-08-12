@@ -97,15 +97,12 @@ final class ProfileView: View {
     
     override func setupAfterLayoutSubviews() {
         super.setupAfterLayoutSubviews()
-        RunLoop.current.perform { [categorySegmentedControl] in
-            MainActor.assumeIsolated {
-                categorySegmentedControl.layer.shadowPath = UIBezierPath(rect: CGRect(
-                    x: 0.0,
-                    y: categorySegmentedControl.bounds.maxY,
-                    width: categorySegmentedControl.bounds.width,
-                    height: 1.0)
-                ).cgPath
-            }
-        }
+        categorySegmentedControl.layoutIfNeeded()
+        categorySegmentedControl.layer.shadowPath = UIBezierPath(rect: CGRect(
+            x: 0.0,
+            y: categorySegmentedControl.bounds.maxY,
+            width: categorySegmentedControl.bounds.width,
+            height: 1.0)
+        ).cgPath
     }
 }

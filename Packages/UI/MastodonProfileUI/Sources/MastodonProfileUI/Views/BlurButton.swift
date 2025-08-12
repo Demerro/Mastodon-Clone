@@ -71,10 +71,7 @@ final class BlurButton: UIControl {
         super.layoutSubviews()
         guard !layoutSubviewsVisitedOnce else { return }
         layoutSubviewsVisitedOnce = true
-        RunLoop.current.perform { [self] in
-            MainActor.assumeIsolated {
-                visualEffectView.layer.cornerRadius = visualEffectView.bounds.width / 4.0
-            }
-        }
+        visualEffectView.layoutIfNeeded()
+        visualEffectView.layer.cornerRadius = visualEffectView.bounds.width / 4.0
     }
 }

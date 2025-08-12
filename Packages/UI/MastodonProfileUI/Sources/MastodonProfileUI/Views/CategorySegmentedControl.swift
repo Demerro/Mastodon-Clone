@@ -84,12 +84,9 @@ final class CategorySegmentedControl: View {
     
     public override func setupAfterLayoutSubviews() {
         super.setupAfterLayoutSubviews()
-        RunLoop.current.perform { [self] in
-            MainActor.assumeIsolated {
-                guard let firstSubview = stackView.subviews.first else { return }
-                lineView.frame = CGRect(x: firstSubview.frame.minX, y: firstSubview.frame.maxY + lineViewHeight * 2.0, width: firstSubview.frame.width, height: lineViewHeight)
-            }
-        }
+        guard let firstSubview = stackView.subviews.first else { return }
+        stackView.layoutIfNeeded()
+        lineView.frame = CGRect(x: firstSubview.frame.minX, y: firstSubview.bounds.height + lineViewHeight * 2.0, width: firstSubview.bounds.width, height: lineViewHeight)
     }
     
     override func layoutMarginsDidChange() {

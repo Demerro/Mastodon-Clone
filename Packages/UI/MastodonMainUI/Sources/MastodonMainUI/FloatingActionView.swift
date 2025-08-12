@@ -24,15 +24,6 @@ final class FloatingActionView: View {
         return button
     }()
     
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        RunLoop.current.perform { [button] in
-            MainActor.assumeIsolated {
-                button.layer.cornerRadius = button.bounds.width / 2.0
-            }
-        }
-    }
-    
     override func draw(_ rect: CGRect) {
         let path = UIBezierPath()
         path.move(to: CGPoint(x: 0.0, y: rect.maxY))
@@ -79,5 +70,11 @@ final class FloatingActionView: View {
             button.widthAnchor.constraint(equalToConstant: 50.0),
             button.heightAnchor.constraint(equalToConstant: 50.0),
         ])
+    }
+    
+    override func setupAfterLayoutSubviews() {
+        super.setupAfterLayoutSubviews()
+        button.layoutIfNeeded()
+        button.layer.cornerRadius = button.bounds.width / 2.0
     }
 }
