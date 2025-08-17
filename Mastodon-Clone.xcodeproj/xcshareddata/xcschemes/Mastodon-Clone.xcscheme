@@ -57,7 +57,7 @@
             isEnabled = "YES">
          </EnvironmentVariable>
          <EnvironmentVariable
-            key = "com.demerro.MastodonKit.Timelines.Debug"
+            key = "com.demerro.MastodonKit.Status.Debug"
             value = "YES"
             isEnabled = "YES">
          </EnvironmentVariable>

@@ -56,7 +56,7 @@ extension PostStatusRequest: RequestProtocol {
         var urlComponents = URLComponents()
         urlComponents.scheme = "https"
         urlComponents.host = instanceHost
-        urlComponents.path = "/default/v1/statuses"
+        urlComponents.path = "/api/v1/statuses"
         
         var request = URLRequest(url: urlComponents.url!)
         request.httpMethod = "POST"
@@ -67,7 +67,7 @@ extension PostStatusRequest: RequestProtocol {
         multipartRequest.add(key: "status", value: status)
         multipartRequest.add(key: "sensitive", value: String(sensitive))
         multipartRequest.add(key: "visibility", value: visibility.rawValue)
-        if let mediaIds {
+        if let mediaIds, !mediaIds.isEmpty {
             multipartRequest.add(key: "media_ids[]", value: mediaIds.joined(separator: ","))
         }
         if let spoilerText {

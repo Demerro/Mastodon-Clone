@@ -20,7 +20,7 @@ extension PostStatusStore {
     public func uploadStatus(status: String, spoilerText: String, visibility: Status.Visibility) async throws(MastodonError) {
         guard let (instanceName, token) = authInfo else { return }
         let request = PostStatusRequest(
-            networkService: .default(delegate: self),
+            networkService: .default(),
             instanceHost: instanceName,
             accessToken: token,
             status: status,
@@ -74,11 +74,5 @@ extension PostStatusStore {
             return nil
         }
         return (instanceName, token)
-    }
-}
-
-extension PostStatusStore: URLSessionTaskDelegate {
-    
-    nonisolated public func urlSession(_ session: URLSession, task: URLSessionTask, didSendBodyData bytesSent: Int64, totalBytesSent: Int64, totalBytesExpectedToSend: Int64) {
     }
 }
