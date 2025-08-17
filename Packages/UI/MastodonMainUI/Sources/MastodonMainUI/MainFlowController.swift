@@ -7,6 +7,7 @@
 
 import UIKit
 import UIKitFoundation
+import MastodonKit
 import MastodonFeedUI
 import MastodonProfileUI
 import MastodonComposeUI
@@ -46,6 +47,7 @@ public final class MainFlowController: TabBarController {
         floatingActionView.button.addAction(UIAction { [unowned self] _ in
             let composeFlowController = ComposeFlowController()
             composeFlowController.modalPresentationStyle = .fullScreen
+            composeFlowController.flowDelegate = self
             present(composeFlowController, animated: true)
         }, for: .touchUpInside)
     }
@@ -60,6 +62,13 @@ public final class MainFlowController: TabBarController {
             visualEffectView.perform(setAllowsGroupFilteringSelector, with: true)
             visualEffectView.perform(setGroupNameSelector, with: visualEffectGroupName)
         }
+    }
+}
+
+extension MainFlowController: ComposeFlowController.Delegate {
+    
+    public func composeFlowController(_ composeFlowController: ComposeFlowController, didFinishWithUploadedStatus status: Status) {
+        
     }
 }
 

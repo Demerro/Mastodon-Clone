@@ -11,14 +11,15 @@ import Foundation
 public final class PostStatusStore: NSObject {
     
     private(set) public var mediaAttachments = [UUID: MediaAttachment]()
-    
-    private var uploadedStatus: Status?
 }
 
 extension PostStatusStore {
     
-    public func uploadStatus(status: String, spoilerText: String, visibility: Status.Visibility) async throws(MastodonError) {
-        guard let (instanceName, token) = authInfo else { return }
+    public func uploadStatus(status: String, spoilerText: String, visibility: Status.Visibility) async throws(MastodonError) -> Status? {
+        guard let (instanceName, token) = authInfo else {
+            assertionFailure("No instance or access token found")
+            return nil
+        }
         let request = PostStatusRequest(
             networkService: .default(),
             instanceHost: instanceName,
@@ -30,7 +31,7 @@ extension PostStatusStore {
             visibility: visibility
         )
         mediaAttachments.removeAll()
-        uploadedStatus = try await request.response()
+        return try await request.response()
     }
     
     public func uploadMedia(data: Data, fileName: String, mimeType: String, storageId id: UUID) async throws(MastodonError) {

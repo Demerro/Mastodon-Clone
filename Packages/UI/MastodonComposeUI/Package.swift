@@ -16,13 +16,14 @@ let package = Package(
         .package(path: "UIKitFoundation"),
         .package(path: "SwiftUtilities"),
         .package(path: "MastodonKit"),
+        .package(path: "MastodonCoreUI"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
             name: "MastodonComposeUI",
-            dependencies: ["UIKitFoundation", "SwiftUtilities", "MastodonKit"]
+            dependencies: ["UIKitFoundation", "SwiftUtilities", "MastodonKit", "MastodonCoreUI"]
         ),
     ],
     swiftLanguageModes: [.v5]

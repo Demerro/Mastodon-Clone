@@ -9,6 +9,7 @@ import MastodonKit
 import PhotosUI
 import UIKit
 import UIKitFoundation
+import MastodonCoreUI
 
 final class ComposeViewController: ViewController {
     
@@ -21,6 +22,8 @@ final class ComposeViewController: ViewController {
     private var mediaUploadingTasks = [UUID: Task<Void, Never>]()
     
     private var mediaLoadingViews = [UUID: (MediaLoadingView, UIButton)]()
+    
+    weak var delegate: (any Delegate)? = nil
     
     private let postStatusStore: PostStatusStore
     
@@ -49,6 +52,9 @@ final class ComposeViewController: ViewController {
             task.cancel()
         }
     }
+}
+
+extension ComposeViewController {
     
     private func configureNavigationBar() {
         title = "New Post"
@@ -60,18 +66,7 @@ final class ComposeViewController: ViewController {
         navigationItem.leftBarButtonItem = leftBarButtonItem
         
         rightBarButtonItem = UIBarButtonItem(title: "Publish", primaryAction: UIAction { [unowned self] _ in
-            Task {
-                let visibility: Status.Visibility = switch composeView.toolbar.visibilityButtonState {
-                case .public: .public
-                case .followersOnly: .private
-                case .unlisted: .unlisted
-                }
-                try await postStatusStore.uploadStatus(
-                    status: composeView.textView.text,
-                    spoilerText: composeView.spoilerTextField.text.unsafelyUnwrapped,
-                    visibility: visibility,
-                )
-            }
+            uploadStatus()
         })
         rightBarButtonItem.isEnabled = false
         navigationItem.rightBarButtonItem = rightBarButtonItem
@@ -245,6 +240,38 @@ extension ComposeViewController {
             false
         }
     }
+    
+    private func uploadStatus() {
+        rightBarButtonItem.isEnabled = false
+        composeView.textView.resignFirstResponder()
+        Task { [weak self] in
+            guard let self else { return }
+            presentLoadingToast(text: "Publishing post...")
+            
+            let visibility: Status.Visibility = switch composeView.toolbar.visibilityButtonState {
+            case .public: .public
+            case .followersOnly: .private
+            case .unlisted: .unlisted
+            }
+            do {
+                guard let status = try await postStatusStore.uploadStatus(status: composeView.textView.text, spoilerText: composeView.spoilerTextField.text.unsafelyUnwrapped, visibility: visibility) else {
+                    rightBarButtonItem.isEnabled = true
+                    dismissToast()
+                    return
+                }
+                dismissToast()
+                presentToast(text: "Post published successfully", image: UIImage(systemName: "checkmark.circle.fill")!)
+                RunLoop.main.add(Timer(timeInterval: 2.0, repeats: false) { _ in
+                    self.dismissToast()
+                }, forMode: .common)
+                delegate?.composeViewController(self, didUploadStatus: status)
+            } catch {
+                dismissToast()
+                presentErrorAlert()
+            }
+            rightBarButtonItem.isEnabled = true
+        }
+    }
 }
 
 extension ComposeViewController {
@@ -385,5 +412,13 @@ extension ComposeViewController: PHPickerViewControllerDelegate {
                 handleVideoSelection(itemProvider, with: storageId)
             }
         }
+    }
+}
+
+extension ComposeViewController {
+    
+    @MainActor
+    protocol Delegate: AnyObject {
+        func composeViewController(_ viewController: ComposeViewController, didUploadStatus status: Status)
     }
 }
