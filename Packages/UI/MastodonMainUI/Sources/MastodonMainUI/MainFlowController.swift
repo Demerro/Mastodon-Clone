@@ -68,7 +68,8 @@ public final class MainFlowController: TabBarController {
 extension MainFlowController: ComposeFlowController.Delegate {
     
     public func composeFlowController(_ composeFlowController: ComposeFlowController, didFinishWithUploadedStatus status: Status) {
-        
+        feedFlowController.feedContainerViewController.appendLocalStatus(status)
+        profileFlowController.profileContainerViewController.fetchStatuses()
     }
 }
 

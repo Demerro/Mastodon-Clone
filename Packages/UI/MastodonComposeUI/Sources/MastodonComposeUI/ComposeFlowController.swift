@@ -17,12 +17,14 @@ public final class ComposeFlowController: NavigationController {
     
     public init() {
         super.init(rootViewController: composeViewController)
+        composeViewController.delegate = self
     }
 }
 
 extension ComposeFlowController: ComposeViewController.Delegate {
     
     func composeViewController(_ viewController: ComposeViewController, didUploadStatus status: Status) {
+        dismiss(animated: true)
         flowDelegate?.composeFlowController(self, didFinishWithUploadedStatus: status)
     }
 }

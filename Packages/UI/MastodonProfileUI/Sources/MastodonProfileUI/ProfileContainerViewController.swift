@@ -14,7 +14,7 @@ import MastodonKit
 import MastodonUtilities
 import FoundationUtilities
 
-final class ProfileContainerViewController: ViewController {
+public final class ProfileContainerViewController: ViewController {
     
     private let accountStore = AccountStore(username: nil)
     
@@ -44,7 +44,7 @@ final class ProfileContainerViewController: ViewController {
     
     private var isPaginatingBySection = [Int: Bool]()
     
-    override func setupCommon() {
+    public override func setupCommon() {
         super.setupCommon()
         
         navigationItem.rightBarButtonItems = [
@@ -115,25 +115,25 @@ extension ProfileContainerViewController {
         } catch {
             switchStateViewController(to: emptyViewController)
         }
-        
-        func fetchStatuses() {
-            Task {
-                try? await accountStore.statusesWithoutReblogsStore.refreshStatuses()
-                let statuses = accountStore.statusesWithoutReblogsStore.statuses
-                contentViewController.sectionConfiguration = .init(section: .withoutReblogs(statuses), reloadData: true)
-            }
+    }
+    
+    public func fetchStatuses() {
+        Task {
+            try? await accountStore.statusesWithoutReblogsStore.refreshStatuses()
+            let statuses = accountStore.statusesWithoutReblogsStore.statuses
+            contentViewController.sectionConfiguration = .init(section: .withoutReblogs(statuses), reloadData: true)
+        }
 
-            Task {
-                try? await accountStore.statusesWithoutRepliesStore.refreshStatuses()
-                let statuses = accountStore.statusesWithoutRepliesStore.statuses
-                contentViewController.sectionConfiguration = .init(section: .withoutReplies(statuses), reloadData: true)
-            }
+        Task {
+            try? await accountStore.statusesWithoutRepliesStore.refreshStatuses()
+            let statuses = accountStore.statusesWithoutRepliesStore.statuses
+            contentViewController.sectionConfiguration = .init(section: .withoutReplies(statuses), reloadData: true)
+        }
 
-            Task {
-                try? await accountStore.statusesWithMediaOnlyStore.refreshStatuses()
-                let statuses = accountStore.statusesWithMediaOnlyStore.statuses
-                contentViewController.sectionConfiguration = .init(section: .withMediaOnly(statuses), reloadData: true)
-            }
+        Task {
+            try? await accountStore.statusesWithMediaOnlyStore.refreshStatuses()
+            let statuses = accountStore.statusesWithMediaOnlyStore.statuses
+            contentViewController.sectionConfiguration = .init(section: .withMediaOnly(statuses), reloadData: true)
         }
     }
 }
@@ -164,7 +164,7 @@ extension ProfileContainerViewController {
 
 extension ProfileContainerViewController: EmptyViewControllerDelegate {
     
-    func emptyViewControllerDidTapRetryButton(_ viewController: EmptyViewController) {
+    public func emptyViewControllerDidTapRetryButton(_ viewController: EmptyViewController) {
         fetchProfile()
     }
 }
@@ -184,21 +184,21 @@ extension ProfileContainerViewController: ProfileContentViewControllerDelegate {
 
 extension ProfileContainerViewController: ImageDetailsViewControllerDelegate {
     
-    func imageDetailsViewControllerDidFinish(_ viewController: ImageDetailsViewController) {
+    public func imageDetailsViewControllerDidFinish(_ viewController: ImageDetailsViewController) {
         imageDetailsViewController = nil
     }
 }
 
 extension ProfileContainerViewController: VideoDetailsViewControllerDelegate {
     
-    func videoDetailsViewControllerDidFinish(_ viewController: VideoDetailsViewController) {
+    public func videoDetailsViewControllerDidFinish(_ viewController: VideoDetailsViewController) {
         videoDetailsViewController = nil
     }
 }
 
 extension ProfileContainerViewController: UIViewControllerTransitioningDelegate {
     
-    func animationController(forPresented presented: UIViewController, presenting: UIViewController, source: UIViewController) -> (any UIViewControllerAnimatedTransitioning)? {
+    public func animationController(forPresented presented: UIViewController, presenting: UIViewController, source: UIViewController) -> (any UIViewControllerAnimatedTransitioning)? {
         if presented === imageDetailsViewController {
             ImageAnimationController(fromItemDelegate: self, toItemDelegate: imageDetailsViewController)
         } else if presented === videoDetailsViewController {
@@ -208,7 +208,7 @@ extension ProfileContainerViewController: UIViewControllerTransitioningDelegate 
         }
     }
     
-    func animationController(forDismissed dismissed: UIViewController) -> (any UIViewControllerAnimatedTransitioning)? {
+    public func animationController(forDismissed dismissed: UIViewController) -> (any UIViewControllerAnimatedTransitioning)? {
         if dismissed === imageDetailsViewController {
             ImageAnimationController(fromItemDelegate: imageDetailsViewController, toItemDelegate: self)
         } else if dismissed === videoDetailsViewController {
@@ -218,7 +218,7 @@ extension ProfileContainerViewController: UIViewControllerTransitioningDelegate 
         }
     }
     
-    func interactionControllerForDismissal(using animator: any UIViewControllerAnimatedTransitioning) -> (any UIViewControllerInteractiveTransitioning)? {
+    public func interactionControllerForDismissal(using animator: any UIViewControllerAnimatedTransitioning) -> (any UIViewControllerInteractiveTransitioning)? {
         if let imageDetailsViewController, imageDetailsViewController.isInteractivelyDismissing {
             let animationController = ImageInteractiveAnimationController(fromItemDelegate: imageDetailsViewController, toItemDelegate: self)
             imageDetailsViewController.interactiveAnimationController = animationController
@@ -235,13 +235,13 @@ extension ProfileContainerViewController: UIViewControllerTransitioningDelegate 
 
 extension ProfileContainerViewController: FeedContentViewControllerDelegate {
     
-    func feedContentViewController(_ viewController: MastodonSharedUI.FeedContentViewController, didSelectImageView imageView: UIImageView) {
+    public func feedContentViewController(_ viewController: MastodonSharedUI.FeedContentViewController, didSelectImageView imageView: UIImageView) {
         guard let image = imageView.image else { return }
         selectionItem = SelectionItem(view: imageView, image: image)
         showImageDetails(for: image)
     }
 
-    func feedContentViewController(_ viewController: FeedContentViewController, didSelectVideoWithURL url: URL, selectionItem: SelectionItem) {
+    public func feedContentViewController(_ viewController: FeedContentViewController, didSelectVideoWithURL url: URL, selectionItem: SelectionItem) {
         self.selectionItem = selectionItem
         let videoDetailsViewController = VideoDetailsViewController(thumbnailImage: selectionItem.image, videoURL: url)
         videoDetailsViewController.transitioningDelegate = self
@@ -251,15 +251,15 @@ extension ProfileContainerViewController: FeedContentViewControllerDelegate {
         present(videoDetailsViewController, animated: true)
     }
     
-    func feedContentViewController(_ viewController: FeedContentViewController, didSelectTextURL textUrl: URL) {
+    public func feedContentViewController(_ viewController: FeedContentViewController, didSelectTextURL textUrl: URL) {
         present(SFSafariViewController(url: textUrl), animated: true)
     }
     
-    func feedContentViewController(_ viewController: FeedContentViewController, didShareStatusURL statusUrl: URL) {
+    public func feedContentViewController(_ viewController: FeedContentViewController, didShareStatusURL statusUrl: URL) {
         present(UIActivityViewController(activityItems: [statusUrl], applicationActivities: nil), animated: true)
     }
     
-    func feedContentViewControllerDidPagination(_ viewController: FeedContentViewController) {
+    public func feedContentViewControllerDidPagination(_ viewController: FeedContentViewController) {
         guard !(isPaginatingBySection[contentViewController.currentIndex] ?? false) else { return }
         isPaginatingBySection[contentViewController.currentIndex] = true
         Task {
@@ -289,12 +289,12 @@ extension ProfileContainerViewController: FeedContentViewControllerDelegate {
 
 extension ProfileContainerViewController: ImageAnimationTransitioningDelegate {
     
-    func willTransitionItem() {
+    public func willTransitionItem() {
         guard let selectionItem else { return }
         selectionItem.view.alpha = 0.0
     }
     
-    var item: TransitionItem? {
+    public var item: TransitionItem? {
         if let selectionItem {
             TransitionItem(
                 image: selectionItem.image,
@@ -307,7 +307,7 @@ extension ProfileContainerViewController: ImageAnimationTransitioningDelegate {
         }
     }
     
-    func itemFrame(in view: UIView) -> CGRect {
+    public func itemFrame(in view: UIView) -> CGRect {
         if let selectionItem {
             selectionItem.view.superview!.convert(selectionItem.view.frame, to: view)
         } else {
@@ -315,7 +315,7 @@ extension ProfileContainerViewController: ImageAnimationTransitioningDelegate {
         }
     }
     
-    func didTransitionItem() {
+    public func didTransitionItem() {
         guard let selectionItem else { return }
         selectionItem.view.alpha = 1.0
     }

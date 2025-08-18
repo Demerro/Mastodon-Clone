@@ -11,7 +11,7 @@ import MastodonSharedUI
 
 public final class FeedFlowController: NavigationController {
 
-    private let feedContainerViewController = FeedContainerViewController()
+    public let feedContainerViewController = FeedContainerViewController()
     
     public init() {
         super.init(rootViewController: feedContainerViewController)

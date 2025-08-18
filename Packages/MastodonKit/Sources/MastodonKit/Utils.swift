@@ -28,4 +28,15 @@ struct Utils {
                 .sorted { $0.id > $1.id }
         }
     }
+    
+    static func parseHTMLContent(in status: consuming Status) throws(Swift.Error) -> Status {
+        guard !status.content.isEmpty else { return status }
+        var content = try NSAttributedString(data: status.content.data(using: .utf8)!, options: [
+            .documentType: NSAttributedString.DocumentType.html,
+            .characterEncoding: String.Encoding.utf8.rawValue,
+        ], documentAttributes: nil).string
+        content.removeLast()
+        status.content = content
+        return status
+    }
 }

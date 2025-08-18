@@ -9,6 +9,7 @@ import Foundation
 
 public final actor TimelineStore {
     
+    @MainActor
     private(set) public var statuses = [Status]()
     
     private var publicTimelineMaxId: String?
@@ -18,6 +19,8 @@ public final actor TimelineStore {
     private(set) public var publicTimelineAllStatusesDisplayed = false
     
     private(set) public var homeTimelineAllStatusesDisplayed = false
+    
+    private var showingHomeTimeline = false
     
     public init() {
     }
@@ -55,7 +58,10 @@ extension TimelineStore {
         homeTimelineMaxId = nil
         let homeTimeline = try await loadHomeTimeline()
         homeTimelineMaxId = homeTimeline.last?.id
-        statuses = homeTimeline
+        showingHomeTimeline = true
+        await MainActor.run {
+            statuses = homeTimeline
+        }
     }
     
     public func appendHomeTimeline() async throws(Swift.Error) {
@@ -63,7 +69,9 @@ extension TimelineStore {
         let homeTimeline = try await loadHomeTimeline()
         if let maxId = homeTimeline.last?.id {
             homeTimelineMaxId = maxId
-            statuses += homeTimeline
+            await MainActor.run {
+                statuses += homeTimeline
+            }
         } else {
             homeTimelineAllStatusesDisplayed = true
         }
@@ -77,7 +85,10 @@ extension TimelineStore {
         publicTimelineMaxId = nil
         let publicTimeline = try await loadPublicTimeline()
         publicTimelineMaxId = publicTimeline.last?.id
-        statuses = publicTimeline
+        showingHomeTimeline = false
+        await MainActor.run {
+            statuses = publicTimeline
+        }
     }
     
     public func appendPublicTimeline() async throws(Swift.Error) {
@@ -85,9 +96,22 @@ extension TimelineStore {
         let publicTimeline = try await loadPublicTimeline()
         if let maxId = publicTimeline.last?.id {
             publicTimelineMaxId = maxId
-            statuses += publicTimeline
+            await MainActor.run {
+                statuses += publicTimeline
+            }
         } else {
             publicTimelineAllStatusesDisplayed = true
+        }
+    }
+}
+
+extension TimelineStore {
+    
+    public func appendStatusToHomeTimeline(_ status: Status) {
+        guard showingHomeTimeline else { return }
+        let parsedStatus = try? Utils.parseHTMLContent(in: status)
+        Task { @MainActor in
+            statuses.insert(parsedStatus ?? status, at: 0)
         }
     }
 }

@@ -12,7 +12,7 @@ import MastodonCoreUI
 import MastodonSharedUI
 import MastodonKit
 
-final class FeedContainerViewController: ViewController {
+public final class FeedContainerViewController: ViewController {
     
     let contentViewController = FeedContentViewController()
     
@@ -62,7 +62,7 @@ final class FeedContainerViewController: ViewController {
         }
     }
     
-    private let timelineStore = TimelineStore()
+    public let timelineStore = TimelineStore()
     
     private var task: Task<Void, any Error>?
     
@@ -70,7 +70,7 @@ final class FeedContainerViewController: ViewController {
     
     private var selectionItem: SelectionItem?
     
-    override func setupCommon() {
+    public override func setupCommon() {
         super.setupCommon()
         
         titleButton.menu = titleButtonMenu
@@ -122,7 +122,7 @@ extension FeedContainerViewController {
                 case .local:
                     try await timelineStore.refreshPublicTimeline()
                 }
-                contentViewController.configuration = await FeedContentViewController.Configuration(statuses: timelineStore.statuses, reloadData: true)
+                contentViewController.configuration = FeedContentViewController.Configuration(statuses: timelineStore.statuses, reloadData: true)
                 switchStateViewController(to: contentViewController)
             } catch {
                 switchStateViewController(to: emptyViewController)
@@ -140,7 +140,7 @@ extension FeedContainerViewController {
                 case .local:
                     try await timelineStore.refreshPublicTimeline()
                 }
-                contentViewController.configuration = await FeedContentViewController.Configuration(statuses: timelineStore.statuses, reloadData: true)
+                contentViewController.configuration = FeedContentViewController.Configuration(statuses: timelineStore.statuses, reloadData: true)
             } catch {
                 switchStateViewController(to: emptyViewController)
             }
@@ -151,14 +151,14 @@ extension FeedContainerViewController {
 
 extension FeedContainerViewController: EmptyViewControllerDelegate {
     
-    func emptyViewControllerDidTapRetryButton(_ viewController: EmptyViewController) {
+    public func emptyViewControllerDidTapRetryButton(_ viewController: EmptyViewController) {
         fetchFeed()
     }
 }
 
 extension FeedContainerViewController: FeedContentViewControllerDelegate {
 
-    func feedContentViewController(_ viewController: FeedContentViewController, didSelectImageView imageView: UIImageView) {
+    public func feedContentViewController(_ viewController: FeedContentViewController, didSelectImageView imageView: UIImageView) {
         guard let image = imageView.image else { return }
         selectionItem = SelectionItem(view: imageView, image: image)
         let imageDetailsViewController = ImageDetailsViewController(image: image)
@@ -169,7 +169,7 @@ extension FeedContainerViewController: FeedContentViewControllerDelegate {
         present(imageDetailsViewController, animated: true)
     }
     
-    func feedContentViewController(_ viewController: FeedContentViewController, didSelectVideoWithURL url: URL, selectionItem: SelectionItem) {
+    public func feedContentViewController(_ viewController: FeedContentViewController, didSelectVideoWithURL url: URL, selectionItem: SelectionItem) {
         self.selectionItem = selectionItem
         let videoDetailsViewController = VideoDetailsViewController(thumbnailImage: selectionItem.image, videoURL: url)
         videoDetailsViewController.transitioningDelegate = self
@@ -179,15 +179,15 @@ extension FeedContainerViewController: FeedContentViewControllerDelegate {
         present(videoDetailsViewController, animated: true)
     }
     
-    func feedContentViewController(_ viewController: FeedContentViewController, didSelectTextURL textUrl: URL) {
+    public func feedContentViewController(_ viewController: FeedContentViewController, didSelectTextURL textUrl: URL) {
         present(SFSafariViewController(url: textUrl), animated: true)
     }
     
-    func feedContentViewController(_ viewController: FeedContentViewController, didShareStatusURL statusUrl: URL) {
+    public func feedContentViewController(_ viewController: FeedContentViewController, didShareStatusURL statusUrl: URL) {
         present(UIActivityViewController(activityItems: [statusUrl], applicationActivities: nil), animated: true)
     }
     
-    func feedContentViewControllerDidPagination(_ viewController: FeedContentViewController) {
+    public func feedContentViewControllerDidPagination(_ viewController: FeedContentViewController) {
         guard !isPaginating else { return }
         isPaginating = true
         task?.cancel()
@@ -201,14 +201,14 @@ extension FeedContainerViewController: FeedContentViewControllerDelegate {
                 guard await !timelineStore.publicTimelineAllStatusesDisplayed else { return }
                 try await timelineStore.appendPublicTimeline()
             }
-            contentViewController.configuration = await FeedContentViewController.Configuration(statuses: timelineStore.statuses, reloadData: false)
+            contentViewController.configuration = FeedContentViewController.Configuration(statuses: timelineStore.statuses, reloadData: false)
         }
     }
 }
 
 extension FeedContainerViewController: UIViewControllerTransitioningDelegate {
     
-    func animationController(forPresented presented: UIViewController, presenting: UIViewController, source: UIViewController) -> (any UIViewControllerAnimatedTransitioning)? {
+    public func animationController(forPresented presented: UIViewController, presenting: UIViewController, source: UIViewController) -> (any UIViewControllerAnimatedTransitioning)? {
         if presented === imageDetailsViewController {
             ImageAnimationController(fromItemDelegate: self, toItemDelegate: imageDetailsViewController)
         } else if presented === videoDetailsViewController {
@@ -218,7 +218,7 @@ extension FeedContainerViewController: UIViewControllerTransitioningDelegate {
         }
     }
     
-    func animationController(forDismissed dismissed: UIViewController) -> (any UIViewControllerAnimatedTransitioning)? {
+    public func animationController(forDismissed dismissed: UIViewController) -> (any UIViewControllerAnimatedTransitioning)? {
         if dismissed === imageDetailsViewController {
             ImageAnimationController(fromItemDelegate: imageDetailsViewController, toItemDelegate: self)
         } else if dismissed === videoDetailsViewController {
@@ -228,7 +228,7 @@ extension FeedContainerViewController: UIViewControllerTransitioningDelegate {
         }
     }
     
-    func interactionControllerForDismissal(using animator: any UIViewControllerAnimatedTransitioning) -> (any UIViewControllerInteractiveTransitioning)? {
+    public func interactionControllerForDismissal(using animator: any UIViewControllerAnimatedTransitioning) -> (any UIViewControllerInteractiveTransitioning)? {
         if let imageDetailsViewController, imageDetailsViewController.isInteractivelyDismissing {
             let animationController = ImageInteractiveAnimationController(fromItemDelegate: imageDetailsViewController, toItemDelegate: self)
             imageDetailsViewController.interactiveAnimationController = animationController
@@ -245,25 +245,25 @@ extension FeedContainerViewController: UIViewControllerTransitioningDelegate {
 
 extension FeedContainerViewController: ImageDetailsViewControllerDelegate {
     
-    func imageDetailsViewControllerDidFinish(_ viewController: ImageDetailsViewController) {
+    public func imageDetailsViewControllerDidFinish(_ viewController: ImageDetailsViewController) {
         imageDetailsViewController = nil
     }
 }
 
 extension FeedContainerViewController: VideoDetailsViewControllerDelegate {
     
-    func videoDetailsViewControllerDidFinish(_ viewController: VideoDetailsViewController) {
+    public func videoDetailsViewControllerDidFinish(_ viewController: VideoDetailsViewController) {
         videoDetailsViewController = nil
     }
 }
 
 extension FeedContainerViewController: ImageAnimationTransitioningDelegate {
     
-    func willTransitionItem() {
+    public func willTransitionItem() {
         selectionItem?.view.alpha = 0.0
     }
     
-    var item: TransitionItem? {
+    public var item: TransitionItem? {
         if let selectionItem {
             TransitionItem(
                 image: selectionItem.image,
@@ -276,7 +276,7 @@ extension FeedContainerViewController: ImageAnimationTransitioningDelegate {
         }
     }
     
-    func itemFrame(in view: UIView) -> CGRect {
+    public func itemFrame(in view: UIView) -> CGRect {
         if let selectionItem {
             selectionItem.view.superview!.convert(selectionItem.view.frame, to: view)
         } else {
@@ -284,7 +284,17 @@ extension FeedContainerViewController: ImageAnimationTransitioningDelegate {
         }
     }
     
-    func didTransitionItem() {
+    public func didTransitionItem() {
         selectionItem?.view.alpha = 1.0
+    }
+}
+
+extension FeedContainerViewController {
+    
+    public func appendLocalStatus(_ status: Status) {
+        Task {
+            await timelineStore.appendStatusToHomeTimeline(status)
+            contentViewController.configuration = FeedContentViewController.Configuration(statuses: timelineStore.statuses, reloadData: true)
+        }
     }
 }

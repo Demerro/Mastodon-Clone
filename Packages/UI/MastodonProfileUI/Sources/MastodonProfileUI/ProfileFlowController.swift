@@ -11,7 +11,7 @@ import MastodonSharedUI
 
 public final class ProfileFlowController: NavigationController {
     
-    private let profileContainerViewController = ProfileContainerViewController()
+    public let profileContainerViewController = ProfileContainerViewController()
     
     public init() {
         super.init(rootViewController: profileContainerViewController)
